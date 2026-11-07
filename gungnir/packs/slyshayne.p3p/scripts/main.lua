@@ -19,6 +19,15 @@ local CFG_FADE_ROWS  = CFG_OBJECT + 0xE0  -- bits 16-23: the rows' fade (the nex
 local MENU_PILL   = 0x093BAF60  -- 16.16: the menu highlight's row, eased halfway to the cursor a game frame
 local MENU_ALPHA  = 0x093BAF68  -- float: the menu's opacity, eased out as Config opens and back as it closes
 
+-- The protagonist select after NEW GAME (its object, checked like Config's).
+local SEL_OBJECT  = 0x09363AD0
+local SEL_SIZE    = 0xC0
+local SEL_STATE   = SEL_OBJECT + 0x34  -- 1, 2, 3 the dialogue, 4 the choice appearing (10 game frames), 5 choosing
+local SEL_CURSOR  = SEL_OBJECT + 0x38  -- 0 him, 1 her
+local SEL_HOVER   = SEL_OBJECT + 0x44  -- float: 0 him, 1 her, eased over 10 game frames as the cursor moves
+local WIDTH = 1240
+local WHITE_FADE = { 0, 34 }  -- frames: the bottom goes white as the title goes (phases 10, 11, 20 last ~36)
+
 local BREATH_CLOCK = 0x093BAF3C -- counts half a unit a frame, wraps at 540 (18 s): the background's breathing
 
 local MENU_ITEMS = 4
@@ -62,6 +71,7 @@ local frame = 0          -- the last update's game frame
 local busyUntil = 0      -- a tap's presses run until this frame
 local screen = "idle"
 local fadeStart = nil
+local whiteStart = 0
 
 local function float(address)
     local x = string.unpack("<f", string.pack("<I4", mem.u32(address)))
@@ -71,6 +81,26 @@ end
 
 local function configObject()
     return mem.u32(CFG_OBJECT) == CFG_SIZE and mem.u32(CFG_OBJECT + 0x1C) == CFG_OBJECT
+end
+
+local function selectObject()
+    return mem.u32(SEL_OBJECT) == SEL_SIZE and mem.u32(SEL_OBJECT + 0x1C) == SEL_OBJECT
+end
+
+-- The protagonist select: white through its dialogue; then the hovered protagonist's colour floods the
+-- screen from their side (him from the left, her from the right), on the game's own eased hover
+-- (0 him, 1 her), which also brings him in as the choice first appears.
+local function select()
+    local state = mem.u32(SEL_STATE)
+    local x = float(SEL_HOVER)
+    local blue, pink = 0, 0
+    if state == 4 then
+        blue = (1 - x) * WIDTH
+    elseif state >= 5 then
+        blue, pink = (1 - x) * WIDTH, x * WIDTH
+    end
+    publish("flood_blue", blue)
+    publish("flood_pink", pink)
 end
 
 -- Config is up: its object is there and its data looks like itself (heap memory can hold leftovers).
@@ -93,8 +123,12 @@ local function screenFor(phase)
     if phase == 8 or phase == 9 then return "menu" end
     -- 15: CONFIG chosen, its object not filled in yet (a few frames); the menu is fading out.
     if phase == 15 and not configOpen() then return "menu" end
-    -- Config has been seen at phase 10 and at 16; its own data says whether it's up.
+    -- Config's own data says whether it's up.
     if phase >= 10 and phase < 32 and configOpen() then return "config" end
+    -- NEW GAME chosen: 10, then 11 while the title fades to black (28 game frames), then 20.
+    if phase == 10 or phase == 11 or phase == 20 then return "newgame" end
+    -- The title gone, the protagonist select's object up (from its dialogue on).
+    if phase >= 32 and selectObject() then return "select" end
     -- Anything else (the data install prompt, a phase not seen yet, or 0xCCCCCCCC and heap pointers
     -- when there's no title at all) stays black rather than guessing.
     return "idle"
@@ -120,6 +154,9 @@ function update(info)
     frame = info.frame
     local phase = mem.u32(TITLE_PHASE)
     local s = screenFor(phase)
+    -- Between the title going and the select's object coming (about 8 frames), stay white.
+    if s == "idle" and screen == "newgame" and frame - whiteStart < 120 then s = "newgame" end
+    if s == "newgame" and screen ~= "newgame" then whiteStart = frame end
     -- Config is on this screen instead: zero its opacity on the game's, each frame, which hides all of it
     -- and leaves the title behind (its taps and buttons work as before). Its object is checked from when
     -- it's made, before its first frame is drawn.
@@ -137,7 +174,12 @@ function update(info)
     publish("fade_text", ramp(t, TEXT_FADE))
     publish("breath", breath())
     publish("busy", frame < busyUntil and 1 or 0)
-    if s ~= "idle" then
+    if s == "newgame" then
+        publish("white", ramp(frame - whiteStart, WHITE_FADE))
+    elseif s == "select" then
+        select()
+    end
+    if s ~= "idle" and s ~= "select" then
         portraits(s)
         local cursor = mem.u32(MENU_CURSOR)
         publish("cursor", cursor < MENU_ITEMS and cursor or 1)

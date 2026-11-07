@@ -15,6 +15,7 @@
     "female_op": { "state": 1 }, "male_op": { "state": 0 }, "female_dx": { "state": 0 }, "male_dx": { "state": 0 },
     "cursor": { "state": 1 }, "pill": { "state": 1 }, "menu_op": { "state": 1 },
     "cfg_panel": { "state": 1 }, "cfg_rows": { "state": 1 },
+    "white": { "state": 0 }, "flood_blue": { "state": 0 }, "flood_pink": { "state": 0 },
     "row": { "state": 0 },
     "v0": { "state": 1 }, "v1": { "state": 0 }, "v2": { "state": 1 },
     "v3": { "state": 1 }, "v4": { "state": 0 }, "v5": { "state": 0 },
@@ -25,6 +26,8 @@
     "cfg_body": "#6CB0F9",
     "cfg_dark": "#003B5D",
     "cfg_yellow": "#FFC347",
+    "sel_him": "#509BF9",
+    "sel_her": "#FB8BDE",
   },
   "start": "home",
   "pages": {
@@ -33,7 +36,7 @@
       "widgets": [
         // ---- the title: the game's own art (assets/game, built by gungnir/tools/p3p_assets.py) at the
         // top screen's 4x, rearranged for this narrower canvas. Each part fades in when the game's does.
-        { "type": "group", "rect": [0, 0, 1240, 1080], "visible": "screen != 'idle'", "children": [
+        { "type": "group", "rect": [0, 0, 1240, 1080], "visible": "screen != 'idle' && screen != 'select'", "children": [
           { "type": "rect", "rect": [0, 0, 1240, 1080], "bg": "#020328", "opacity": "fade_art" },
           { "type": "image", "rect": [0, 0, 1240, 1080], "src": "assets/gradient.png", "fill": "stretch", "opacity": "fade_bg * breath" },
           { "type": "image", "rect": ["300 + 180 * (1 - fade_bg)", -216, 1024, 1024], "src": "assets/game/moon.png", "fill": "stretch", "opacity": "fade_bg" },
@@ -128,6 +131,14 @@
             { "type": "image", "rect": [1100, 12, 120, 60], "src": "assets/game/cfg_back.png", "fill": "stretch" },
           ] },
           { "type": "rect", "rect": [1030, 1004, 210, 76], "on_tap": { "call": "tap_back" } },
+        ] },
+
+        // ---- NEW GAME: white as the title goes black, through the dialogue; then at the protagonist
+        // select, the hovered one's colour floods over from their side (him blue, her pink).
+        { "type": "group", "rect": [0, 0, 1240, 1080], "visible": "screen == 'newgame' || screen == 'select'", "children": [
+          { "type": "rect", "rect": [0, 0, 1240, 1080], "bg": "#FFFFFF", "opacity": "screen == 'select' ? 1 : white" },
+          { "type": "rect", "rect": [0, 0, "flood_blue", 1080], "bg": "sel_him", "visible": "screen == 'select'" },
+          { "type": "rect", "rect": ["1240 - flood_pink", 0, "flood_pink", 1080], "bg": "sel_her", "visible": "screen == 'select'" },
         ] },
       ],
     },

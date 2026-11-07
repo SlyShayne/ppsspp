@@ -63,6 +63,24 @@ The title's portraits swap each time PRESS ANY BUTTON and the menu change places
 as the phase becomes 8 or 6): the incoming one fades in sliding from 48 PSP px to the left, the outgoing
 one fades out in place, both on the crossfade at `0x093BAF64`.
 
+## NEW GAME and the protagonist select
+
+Choosing NEW GAME takes the title phase to 10 (2 frames), 11 (the title fades to black, about 28
+frames at 60 Hz) and 20, then the title is freed. About 8 frames later the select's object appears, and
+it runs the "Welcome to the world of P3P" dialogue and then the choice.
+
+| Address | What | Values |
+|---|---|---|
+| `0x09363AD0` | The select's object: first word (allocation size) | 0xC0; it points to itself at +0x1C (check both, as with Config) |
+| `0x09363B00` (+0x30) | The choice's fade-in | 0 → 0xFF over its 10 game frames |
+| `0x09363B04` (+0x34) | State | 1, 2, 3 the dialogue, 4 the choice appearing, 5 choosing |
+| `0x09363B08` (+0x38) | Cursor | 0 the male protagonist, 1 the female |
+| `0x09363B0C`, `0x09363B10` | Floats: the two portraits' x offsets | animate as the cursor moves |
+| `0x09363B14` (+0x44) | Float: the hover | 0 him, 1 her, eased (1 − cos) over 10 game frames as the cursor moves; also 1 → 0 as the choice appears |
+| `0x09363B18` (+0x48) | Float | 1.0 while he's hovered, 0 while she is (jumps) |
+
+The backgrounds are `#509BF9` (his, left) and `#FB8BDE` (hers, right).
+
 ## Draw lists (not state)
 
 `0x08D60000`–`0x08D80000` and its double buffer `0x08DB0000`–`0x08DD0000` hold the game's per-frame
