@@ -1,15 +1,16 @@
 // Persona 3 Portable (USA): the title screen and Config, on the second screen, following the game.
-// - Black while the game loads, then a fade to the title's blue as the game fades in.
+// - Black while the game loads, then the title's own art, fading in and breathing as the game's does.
 // - PRESS ANY BUTTON: tap anywhere.
 // - The menu: NEW GAME, LOAD GAME, CONFIG, DATA INSTALL, lit as the game's cursor is; tap one to choose it.
 // - Config: every row with its switch and help line; tap ON or OFF to switch, OK to confirm, Back to leave.
-// Taps become the button presses a player would make (scripts/main.lua). The look is this pack's own.
+// Taps snap the game's cursor and press its button (scripts/main.lua). The title art is the game's,
+// built from your own dump with gungnir/tools/p3p_assets.py; Config's look is this pack's own.
 {
   "script": "scripts/main.lua",
   "update_hz": 60,
   "values": {
     "screen": { "state": "idle" },
-    "fade": { "state": 1 },
+    "fade_art": { "state": 1 }, "fade_bg": { "state": 1 }, "fade_text": { "state": 1 }, "breath": { "state": 1 },
     "art": { "state": 1 },
     "cursor": { "state": 1 },
     "row": { "state": 0 },
@@ -41,28 +42,40 @@
     "home": {
       "bg": "#000000",
       "widgets": [
-        // ---- the title's background: the fade, PRESS ANY BUTTON and the menu ----
-        { "type": "group", "rect": [0, 0, 1240, 1080], "visible": "screen == 'fade' || screen == 'pab' || screen == 'menu' || screen == 'title'", "children": [
-          { "type": "rect", "rect": [0, 0, 1240, 1080], "bg": "blue" },
-          { "type": "rect", "rect": [330, -140, 720, 720], "bg": "moon", "radius": 360, "opacity": "0.55" },
-          { "type": "label", "rect": [0, 150, 1240, 200], "text": "P3P", "size": 180, "color": "#FFFFFF", "text_align": "center" },
-          { "type": "label", "rect": [0, 360, 1240, 60], "text": "PERSONA3 PORTABLE", "size": 44, "color": "sky", "text_align": "center" },
+        // ---- the title: the game's own art (assets/game, built by gungnir/tools/p3p_assets.py) at the
+        // top screen's 4x, rearranged for this narrower canvas. Each part fades in when the game's does.
+        { "type": "group", "rect": [0, 0, 1240, 1080], "visible": "screen == 'fade' || screen == 'pab' || screen == 'menu'", "children": [
+          { "type": "rect", "rect": [0, 0, 1240, 1080], "bg": "#020328", "opacity": "fade_art" },
+          { "type": "image", "rect": [0, 0, 1240, 1080], "src": "assets/gradient.png", "fill": "stretch", "opacity": "fade_bg * breath" },
+          { "type": "image", "rect": ["300 + 180 * (1 - fade_bg)", -216, 1024, 1024], "src": "assets/game/moon.png", "fill": "stretch", "opacity": "fade_bg" },
+          { "type": "image", "rect": [740, 584, 512, 512], "src": "assets/game/creature.png", "fill": "stretch", "opacity": "fade_bg" },
+          { "type": "image", "rect": [-200, -21, 1024, 1126], "src": "assets/game/art_female.png", "fill": "stretch", "visible": "art == 1", "opacity": "fade_art" },
+          { "type": "image", "rect": [-200, -21, 1024, 1126], "src": "assets/game/art_male.png", "fill": "stretch", "visible": "art == 0", "opacity": "fade_art" },
+          { "type": "image", "rect": [540, 150, 768, 384], "src": "assets/game/logo.png", "fill": "stretch", "opacity": "fade_art" },
 
           // PRESS ANY BUTTON: anywhere is the button.
           { "type": "rect", "rect": [0, 0, 1240, 1080], "visible": "screen == 'pab'", "on_tap": { "call": "tap_any" } },
-          { "type": "label", "rect": [0, 760, 1240, 70], "visible": "screen == 'pab'", "text": "PRESS ANY BUTTON", "size": 56,
-            "color": "#FFFFFF", "text_align": "center", "opacity": "0.6 + 0.4 * sin(@ui_ms * 0.36)" },
+          { "type": "image", "rect": [576, 872, 604, 36], "src": "assets/game/text_pab.png", "fill": "stretch", "visible": "screen != 'menu'", "opacity": "fade_text" },
 
-          // The menu, lit where the game's cursor is.
+          // The menu: the game's pill behind the item its cursor is on, that item's text dark.
           { "type": "group", "rect": [0, 0, 1240, 1080], "visible": "screen == 'menu'", "children": [
-            { "type": "label", "rect": [270, 560, 700, 90], "text": "NEW GAME", "class": "item", "class_if": { "item_lit": "cursor == 0" }, "on_tap": { "call": "tap_menu", "args": [0] } },
-            { "type": "label", "rect": [270, 670, 700, 90], "text": "LOAD GAME", "class": "item", "class_if": { "item_lit": "cursor == 1" }, "on_tap": { "call": "tap_menu", "args": [1] } },
-            { "type": "label", "rect": [270, 780, 700, 90], "text": "CONFIG", "class": "item", "class_if": { "item_lit": "cursor == 2" }, "on_tap": { "call": "tap_menu", "args": [2] } },
-            { "type": "label", "rect": [270, 890, 700, 90], "text": "DATA INSTALL", "class": "item", "class_if": { "item_lit": "cursor == 3" }, "on_tap": { "call": "tap_menu", "args": [3] } },
+            { "type": "group", "rect": [644, "784 + 52 * cursor", 476, 48], "children": [
+              { "type": "image", "rect": [0, 0, 40, 48], "src": "assets/game/pill_left.png", "fill": "stretch" },
+              { "type": "rect", "rect": [40, 0, 396, 48], "bg": "#FEFEFE" },
+              { "type": "image", "rect": [436, 0, 40, 48], "src": "assets/game/pill_right.png", "fill": "stretch" },
+            ] },
+            { "type": "image", "rect": [720, 792, 328, 32], "src": "assets/game/text_new.png", "fill": "stretch", "tint": "cursor == 0 ? '#0F0F30' : '#F4F4F4'" },
+            { "type": "image", "rect": [700, 844, 360, 32], "src": "assets/game/text_load.png", "fill": "stretch", "tint": "cursor == 1 ? '#0F0F30' : '#F4F4F4'" },
+            { "type": "image", "rect": [760, 894, 236, 36], "src": "assets/game/text_config.png", "fill": "stretch", "tint": "cursor == 2 ? '#0F0F30' : '#F4F4F4'" },
+            { "type": "image", "rect": [692, 946, 380, 36], "src": "assets/game/text_install.png", "fill": "stretch", "tint": "cursor == 3 ? '#0F0F30' : '#F4F4F4'" },
+            // Taps: each item's whole row, wider than its pill.
+            { "type": "rect", "rect": [560, 778, 680, 52], "on_tap": { "call": "tap_menu", "args": [0] } },
+            { "type": "rect", "rect": [560, 830, 680, 52], "on_tap": { "call": "tap_menu", "args": [1] } },
+            { "type": "rect", "rect": [560, 882, 680, 52], "on_tap": { "call": "tap_menu", "args": [2] } },
+            { "type": "rect", "rect": [560, 934, 680, 52], "on_tap": { "call": "tap_menu", "args": [3] } },
           ] },
 
-          // While the game fades in, so does this, from black.
-          { "type": "rect", "rect": [0, 0, 1240, 1080], "bg": "#000000", "visible": "screen == 'fade'", "opacity": "1 - fade" },
+          { "type": "image", "rect": [696, 1028, 504, 48], "src": "assets/game/text_copyright.png", "fill": "stretch", "opacity": "fade_text" },
         ] },
 
         // ---- Config ----

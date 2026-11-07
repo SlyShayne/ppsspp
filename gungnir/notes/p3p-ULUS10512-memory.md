@@ -11,9 +11,10 @@ checked across a full restart.
 
 | Address | What | Values |
 |---|---|---|
-| `0x093BAF30` | Title phase | 5 fading in, 7 PRESS ANY BUTTON, 9 main menu, 10 or 16 Config (both seen, steady); `0xCCCCCCCC` in the attract mode (logos, opening). Left idle, the menu goes back to 7 |
+| `0x093BAF30` | Title phase | 0, 2, 3, 4 setting up (about 38 frames, black on screen), 5 fading in (358 frames), 6 then 7 PRESS ANY BUTTON, 8 then 9 main menu, 10 or 16 Config (both seen, steady), 18 the data install prompt; `0xCCCCCCCC` in the attract mode (logos, opening), and heap pointers such as `0x0960B2C0` right after boot. Left idle, the menu goes back to 7 |
 | `0x093BAF34` | (with the phase) | 0 while fading in, 8 after |
-| `0x093BAF38`, `0x093BAF3C` | Timers within the phase | count up |
+| `0x093BAF38` | Timer within the phase | counts up |
+| `0x093BAF3C` | Background breathing clock | half a unit a frame; mod 540 (18 s): brightening 0 to ~186, bright to ~375, dimming to 540 |
 | `0x093BAF48` | Title art | 1 female protagonist, 0 male (alternates between visits) |
 | `0x093BAF4C` | ? | 0 on PRESS ANY BUTTON, 0x10 on the menu |
 | `0x093BAF58` | Menu cursor | 0 NEW GAME, 1 LOAD GAME, 2 CONFIG, 3 DATA INSTALL (wraps) |
@@ -24,6 +25,11 @@ checked across a full restart.
 Timing: Start skips the opening to the fade-in. The fade-in (~6 s) ignores buttons; PRESS ANY
 BUTTON then lasts until ~12 s after Start, and the attract mode comes back. The d-pad doesn't count
 as "any button"; Cross does. The menu opens with the cursor on LOAD GAME.
+
+The fade-in, in frames from the start of phase 5, measured on the game's screen: the character art
+first (0 to ~110), then the gradient and moon (~130 to ~340), then PRESS ANY BUTTON (~270 to ~330).
+The background is vertex colours, not a texture: radial from the top-right corner, `#4D4FAE` to
+`#05072F` about 1350 px (4x) away, breathing down to about `#020328`.
 
 ## Config screen (main menu → CONFIG)
 

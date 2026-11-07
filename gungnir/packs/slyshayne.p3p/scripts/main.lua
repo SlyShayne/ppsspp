@@ -9,12 +9,44 @@ local CFG_CURSOR  = 0x093C1C8C  -- 0..6, Confirm last
 local CFG_VALUES  = 0x093C1CA4  -- six words, 1 ON
 local CFG_SIDES   = 0x093C1CBC  -- six words, 1 - the value
 
+local BREATH_CLOCK = 0x093BAF3C -- counts half a unit a frame, wraps at 540 (18 s): the background's breathing
+
 local MENU_ITEMS = 4
 local CFG_ROWS = 7
 local CONFIRM_ROW = 6
 local HOLD = 4          -- frames a press is held
 local STEP = 8          -- frames from one press to the next
-local FADE_FRAMES = 360 -- the game's own fade-in takes about 6 s
+
+-- The game's fade-in, measured on its top screen, in frames from the start of phase 5 (which lasts 358):
+-- the character art first, then the gradient and moon, then PRESS ANY BUTTON, done as phase 7 begins.
+local ART_FADE  = { 0, 110 }
+local BG_FADE   = { 130, 340 }
+local TEXT_FADE = { 270, 330 }
+
+-- The breathing, over the clock's 540 units: back up from near black, hold, then down again.
+local BREATH_UP, BREATH_HOLD = 186, 375
+local BREATH_FLOOR = 0.0  -- the darkest is a flat #020328, a rect under the gradient
+
+local function ramp(t, span)
+    if t <= span[1] then return 0.0 end
+    if t >= span[2] then return 1.0 end
+    return (t - span[1]) / (span[2] - span[1])
+end
+
+local function breath()
+    local c = mem.u32(BREATH_CLOCK) % 540
+    local b
+    if c < BREATH_UP then
+        b = c / BREATH_UP
+    elseif c < BREATH_HOLD then
+        b = 1.0
+    else
+        b = (540 - c) / (540 - BREATH_HOLD)
+    end
+    -- Eased like the game's: slow at both ends.
+    b = 0.5 - 0.5 * math.cos(math.pi * b)
+    return BREATH_FLOOR + (1.0 - BREATH_FLOOR) * b
+end
 
 local HELP = {
     [0] = "Turn event voices ON/OFF",
@@ -43,13 +75,16 @@ local function configOpen()
 end
 
 local function screenFor(phase)
-    if phase == 5 or phase == 6 then return "fade" end
-    if phase == 7 then return "pab" end
+    -- 0, 2, 3, 4: the title is being set up, black on the game's screen too (about 38 frames).
+    if phase <= 4 then return "idle" end
+    if phase == 5 then return "fade" end
+    if phase == 6 or phase == 7 then return "pab" end
     if phase == 8 or phase == 9 then return "menu" end
     -- Config has been seen at phase 10 and at 16; its own data says whether it's up.
     if phase >= 10 and phase < 32 and configOpen() then return "config" end
-    if phase < 32 then return "title" end
-    return "idle"  -- 0xCCCCCCCC: no title screen (the attract mode, or the game itself)
+    -- Anything else (the data install prompt, a phase not seen yet, or 0xCCCCCCCC and heap pointers
+    -- when there's no title at all) stays black rather than guessing.
+    return "idle"
 end
 
 function update(info)
@@ -57,11 +92,17 @@ function update(info)
     local phase = mem.u32(TITLE_PHASE)
     local s = screenFor(phase)
     if s == "fade" and screen ~= "fade" then fadeStart = frame end
+    if s == "idle" then fadeStart = nil end
     screen = s
     publish("screen", s)
-    publish("fade", fadeStart and math.min((frame - fadeStart) / FADE_FRAMES, 1.0) or 1.0)
+    -- Staged fade-in; a title reached without the fade (loading back from Config) shows at once.
+    local t = (s == "fade" and fadeStart) and (frame - fadeStart) or 1e9
+    publish("fade_art", ramp(t, ART_FADE))
+    publish("fade_bg", ramp(t, BG_FADE))
+    publish("fade_text", ramp(t, TEXT_FADE))
+    publish("breath", breath())
     publish("busy", frame < busyUntil and 1 or 0)
-    if s == "fade" or s == "pab" or s == "menu" or s == "config" or s == "title" then
+    if s ~= "idle" then
         publish("art", mem.u32(TITLE_ART))
         local cursor = mem.u32(MENU_CURSOR)
         publish("cursor", cursor < MENU_ITEMS and cursor or 1)
@@ -74,18 +115,14 @@ function update(info)
     end
 end
 
--- Presses [button] [count] times, STEP frames apart, from [start]; returns the frame offset after them.
-local function pressTimes(button, count, start)
-    for k = 0, count - 1 do input.press(button, HOLD, start + k * STEP) end
-    return start + count * STEP
-end
-
--- Moves a wrapping cursor from [from] to [to] by the shorter way; returns the frame offset after it.
-local function moveCursor(from, to, count)
-    local down = (to - from) % count
-    local up = (from - to) % count
-    if up < down then return pressTimes("up", up, 0) end
-    return pressTimes("down", down, 0)
+-- Puts a cursor straight on [to], as the game would have it after moving there: its previous position
+-- too, so the game doesn't animate a move. Writes happen at the frame boundary, before the game reads
+-- them. Returns the frames to wait before pressing a button on it.
+local SNAP = 2
+local function snapCursor(cursorAddress, to)
+    mem.write32(cursorAddress, to)
+    mem.write32(cursorAddress + 4, to)
+    return SNAP
 end
 
 -- A tap while an earlier one's presses still run is refused (false plays the "refused" haptic).
@@ -104,10 +141,10 @@ function tap_any()
     finish(6)
 end
 
--- The title menu: move to the item and choose it.
+-- The title menu: snap to the item and choose it.
 function tap_menu(item)
     if screen ~= "menu" or not begin() then return false end
-    local t = moveCursor(mem.u32(MENU_CURSOR), item, MENU_ITEMS)
+    local t = snapCursor(MENU_CURSOR, item)
     input.press("cross", 6, t)
     finish(t + 6)
 end
@@ -115,21 +152,21 @@ end
 -- Config: a row's name selects it (and shows its help); ON and OFF switch it; OK confirms.
 function tap_row(row)
     if screen ~= "config" or not begin() then return false end
-    finish(moveCursor(mem.u32(CFG_CURSOR), row, CFG_ROWS))
+    finish(snapCursor(CFG_CURSOR, row))
 end
 
 function tap_switch(row, on)
     if screen ~= "config" or not begin() then return false end
     -- Auto Text has no choice while Voices is OFF (the game shows NONE).
     if row == 1 and mem.u32(CFG_VALUES) == 0 then return false end
-    local t = moveCursor(mem.u32(CFG_CURSOR), row, CFG_ROWS)
+    local t = snapCursor(CFG_CURSOR, row)
     input.press(on == 1 and "left" or "right", HOLD, t)
     finish(t + HOLD)
 end
 
 function tap_confirm()
     if screen ~= "config" or not begin() then return false end
-    local t = moveCursor(mem.u32(CFG_CURSOR), CONFIRM_ROW, CFG_ROWS)
+    local t = snapCursor(CFG_CURSOR, CONFIRM_ROW)
     input.press("cross", 6, t)
     finish(t + 6)
 end
