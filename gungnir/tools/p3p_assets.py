@@ -11,10 +11,11 @@ umd0.cpk (see orpheus() below) for the protagonist select.
 
 Needs Pillow. Texture names are PPSSPP's hashes for the US release (ULUS10512).
 """
+import json
 import os
 import sys
 
-from PIL import Image, ImageFilter, ImageOps
+from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageOps
 
 WHOLE = {
     "art_female.png": "09443a10b93c8800fdbcf696.png",
@@ -153,12 +154,38 @@ def main(src, dst):
 ORPHEUS_HEIGHT = 1080  # the second screen's height: each Orpheus touches its top and bottom
 ORPHEUS_EDGE = 6       # the outline round the full-colour one, as the protagonists have on the game's screen
 ORPHEUS_SHADOW = 60    # room round the drop shadow
+# Where each side's colour ends at the protagonist select: a line through the figure from where it touches
+# the top (x) to where it touches the bottom (x: his left foot; her right leg, the one on the screen), and
+# which side of it the colour is on. The pack's manifest has the line's points as this prints them.
+ORPHEUS_LINES = {"orpheus_male": (332, 588, "left"), "orpheus_female": (356, 291, "right")}
+LINE_STEP = 40   # a point every this many rows
+LINE_INSET = 14  # where the straight line would leave the figure, it's moved this far inside it
+
+
+def colour_line(alpha, top, bottom):
+    """ORPHEUS_LINES' line as points, the straight line moved inside the figure wherever it would leave it,
+    and running past the picture's top and bottom."""
+    solid = alpha.point(lambda v: 255 if v > 128 else 0)
+    inner = solid.filter(ImageFilter.MinFilter(2 * LINE_INSET + 1))
+    px = inner.load()
+    w, h = alpha.size
+    points = []
+    for y in list(range(0, h, LINE_STEP)) + [h - 1]:
+        x0 = round(top + (bottom - top) * y / (h - 1))
+        x = x0
+        if not px[min(max(x0, 0), w - 1), y]:
+            near = [c for d in range(1, 400) for c in (x0 - d, x0 + d) if 0 <= c < w and px[c, y]]
+            x = near[0] if near else x0
+        points.append([x, y])
+    points[0][1], points[-1][1] = -2, h + 2
+    return points
 
 
 def orpheus(src, dst):
     """Orpheus, his and hers, cropped to the figure and scaled smoothly to ORPHEUS_HEIGHT (the pack draws them
     1:1, so their edges stay smooth): _full in colour, _flat and _edge white (the pack tints them), _edge
-    ORPHEUS_EDGE px bigger all round, and _shadow, black, ORPHEUS_SHADOW px bigger. [src] holds orpheus_male.png and orpheus_female.png: the game's
+    ORPHEUS_EDGE px bigger all round, and _shadow, black, ORPHEUS_SHADOW px bigger and only on the white side
+    of the colour's line. [src] holds orpheus_male.png and orpheus_female.png: the game's
     data/camp/persona/pst_001.tmx and pst_0AE.tmx (in PSP_GAME/USRDIR/umd0.cpk), decoded to RGBA."""
     for name in ("orpheus_male", "orpheus_female"):
         image = Image.open(os.path.join(src, name + ".png")).convert("RGBA")
@@ -186,10 +213,18 @@ def orpheus(src, dst):
         spread = Image.new("L", (size[0] + 2 * s, size[1] + 2 * s), 0)
         spread.paste(grown, (s - e, s - e))
         spread = spread.filter(ImageFilter.GaussianBlur(18)).point(lambda a: round(a * 0.42))
+        # Only where it falls on white: none on the colour's side of the line (softened, where the line meets
+        # the figure's top and bottom).
+        top, bottom, side = ORPHEUS_LINES[name]
+        line = colour_line(full.getchannel("A"), top, bottom)
+        far = -s if side == "left" else size[0] + s
+        keep = Image.new("L", spread.size, 255)
+        ImageDraw.Draw(keep).polygon([(x + s, y + s) for x, y in [[far, -s]] + line + [[far, size[1] + s]]], fill=0)
+        spread = ImageChops.multiply(spread, keep.filter(ImageFilter.GaussianBlur(6)))
         shadow = Image.new("RGBA", spread.size, (0, 0, 0, 0))
         shadow.putalpha(spread)
         shadow.save(os.path.join(dst, name + "_shadow.png"))
-        print("%s: %dx%d" % (name, size[0], size[1]))
+        print("%s: %dx%d, colour line %s" % (name, size[0], size[1], json.dumps(line, separators=(",", ":"))))
     print("wrote the Orpheus pictures to", dst)
 
 

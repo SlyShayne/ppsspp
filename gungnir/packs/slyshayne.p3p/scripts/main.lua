@@ -98,16 +98,8 @@ local function selectObject()
     return mem.u32(SEL_OBJECT) == SEL_SIZE and mem.u32(SEL_OBJECT + 0x1C) == SEL_OBJECT
 end
 
--- A value that eases toward its target a fifth of the way a frame (about 20 frames to settle), starting where
--- it first is.
-local GLIDE = 0.2
-local glides = {}
-local function glide(key, target)
-    local at = glides[key] or target
-    at = at + (target - at) * GLIDE
-    glides[key] = at
-    return at
-end
+-- Each Orpheus's offsets at the select: where the game last had it back and forward ({ back, front }).
+local reach = {}
 
 local function rawFloat(address)
     local x = string.unpack("<f", string.pack("<I4", mem.u32(address)))
@@ -119,8 +111,7 @@ end
 -- (Orpheus-F) on the right in pink, white between. Through the dialogue both are in colour, trailing
 -- outward. From the choice on, the hovered one comes forward in colour, and the other goes back, flat in
 -- its colour, its trail drawn in. The flat colour wipes over a portrait from the middle out to its side, and
--- off again the other way: on the game's eased hover (0 him, 1 her), the one coming in first, then the one
--- going out.
+-- off again the other way. Both move together, on the game's eased hover (0 him, 1 her).
 local function select()
     local state = mem.u32(SEL_STATE)
     -- Black, then the scene as the game's screen fades in from black (timed from state 2's start).
@@ -130,18 +121,30 @@ local function select()
     local x = float(SEL_HOVER)
     local himFlat, herFlat = 0, 0
     if state == 4 then
-        herFlat = 1 - math.min(1, 2 * x)  -- as the choice appears (x 1 to 0), she goes flat
+        herFlat = 1 - x  -- as the choice appears (x 1 to 0), she goes flat
     elseif state >= 5 then
-        himFlat = math.max(0, 2 * x - 1)
-        herFlat = 1 - math.min(1, 2 * x)
+        himFlat, herFlat = x, 1 - x
     end
     publish("him_flat", himFlat)
     publish("her_flat", herFlat)
-    -- How far each is forward (toward the middle), at 4x: the game's own (-10 PSP px each through the
-    -- dialogue), eased here too, since the one going back jumps there on the game's screen (hidden by its
-    -- flat colour) and wouldn't here.
-    publish("him_dx", glide("him", SCALE_X * rawFloat(SEL_OFFSETS)))
-    publish("her_dx", glide("her", SCALE_X * rawFloat(SEL_OFFSETS + 4)))
+    -- How far each is forward (toward the middle), at 4x. The game's own (-10 PSP px each through the
+    -- dialogue), but from the choice on each goes between where the game last had it back and where it last
+    -- had it forward, on the hover, so the one going back moves with the one coming forward (the game jumps
+    -- it there, hidden by its flat colour).
+    local cursor = mem.u32(SEL_CURSOR)
+    local function forward(side, address, weight)
+        local at = SCALE_X * rawFloat(address)
+        if state < 5 then
+            reach[side] = { back = at, front = at }
+            return at
+        end
+        local r = reach[side] or { back = at, front = at }
+        if cursor == (side == "her" and 1 or 0) then r.front = at else r.back = at end
+        reach[side] = r
+        return r.back + (r.front - r.back) * weight
+    end
+    publish("him_dx", forward("him", SEL_OFFSETS, 1 - x))
+    publish("her_dx", forward("her", SEL_OFFSETS + 4, x))
     -- Each Orpheus's trail, like the portraits' on the game's screen: TRAIL_COPIES silhouettes drift away
     -- one spacing every TRAIL_PERIOD frames, blending into the background as they go (gone by the last
     -- spacing), while a new one comes out from behind. Copy i is drawn farthest first.
@@ -328,7 +331,7 @@ function update(info)
     if s == "newgame" and screen ~= "newgame" then blackStart = frame end
     if s ~= "select" then
         whiteStart = nil
-        glides = {}
+        reach = {}
     end
     -- Config is on this screen instead: zero its opacity on the game's, each frame, which hides all of it
     -- and leaves the title behind (its taps and buttons work as before). Its object is checked from when
