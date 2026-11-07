@@ -1,0 +1,40 @@
+// A test pack, not a game companion yet: it proves each part of the PPSSPP host works on the device.
+// - Frame counter and bar: the host ticks every frame.
+// - RUNNING / PAUSED: ticks keep coming while PPSSPP's menu is open.
+// - RAM readout: reads of the game's memory work (it changes as the game loads).
+// - Tap and Buzz: touch reaches the pack, and haptics come back.
+// It writes nothing to the game's memory.
+{
+  "script": "scripts/main.lua",
+  "update_hz": 15,
+  "values": {
+    "taps": { "state": 0 },
+  },
+  "actions": {
+    "tap": { "kind": "set", "value": "taps", "to": "taps + 1", "haptic": "tap" },
+    "buzz": { "kind": "haptic", "haptic": "heavy" },
+  },
+  "styles": {
+    "panel": { "bg": "#1E2A4A", "border": 4, "border_color": "#4FA3FF", "radius": 12, "pad": 12 },
+  },
+  "start": "home",
+  "pages": {
+    "home": {
+      "bg": "#0B1020",
+      "widgets": [
+        { "type": "label", "rect": [60, 50, 1120, 70], "text": "Persona 3 Portable", "size": 56, "color": "#4FA3FF" },
+        { "type": "label", "rect": [60, 130, 1120, 50], "text": "Gungnir companion test", "size": 36, "color": "#A0B4D8" },
+
+        { "type": "label", "rect": [60, 240, 1120, 50], "text": "Frame {frame}  ({seconds} s)", "size": 40 },
+        { "type": "bar", "rect": [60, 305, 1120, 36], "bind": "frame % 60", "max": 60, "color": "#4FA3FF" },
+        { "type": "label", "rect": [60, 370, 1120, 50], "text": "{=@paused ? 'PAUSED' : 'RUNNING'}", "size": 40,
+          "color": "@paused ? '#F6D046' : '#3CD070'" },
+        { "type": "label", "rect": [60, 450, 1120, 50], "text": "RAM 0x08804000: {ram_hex}", "size": 40 },
+
+        { "type": "label", "rect": [60, 560, 1120, 50], "text": "Taps: {taps}", "size": 40 },
+        { "type": "button", "rect": [60, 640, 520, 160], "text": "Tap", "size": 48, "class": "panel", "on_tap": "tap" },
+        { "type": "button", "rect": [660, 640, 520, 160], "text": "Buzz", "size": 48, "class": "panel", "on_tap": "buzz" },
+      ],
+    },
+  },
+}

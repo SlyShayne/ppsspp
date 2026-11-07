@@ -1,0 +1,2 @@
+// No addresses yet: this test pack only reads @frame and a fixed RAM address.
+{ "symbols": {} }
