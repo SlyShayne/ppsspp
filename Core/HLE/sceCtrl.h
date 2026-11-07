@@ -73,6 +73,9 @@ void __CtrlVblank();
 
 // Clears and sets selected buttons. NOTE: Clearing happens first.
 void __CtrlUpdateButtons(u32 bitsToSet, u32 bitsToClear);
+// Buttons held on the game's behalf by a host feature (Gungnir's input capability), ORed into every
+// sample with the player's own. 0 lets go. Any thread.
+void __CtrlSetHostHeld(u32 buttons);
 // Presses buttons for a number of vblanks of emulated time; returns an id for __CtrlPressActive.
 int __CtrlPressFor(u32 buttons, int vblanks);
 bool __CtrlPressActive(int id);

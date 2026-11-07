@@ -38,6 +38,7 @@
 #include "Core/Config.h"
 #include "Core/Core.h"
 #include "Core/ELF/ParamSFO.h"
+#include "Core/HLE/sceCtrl.h"
 #include "Core/HLE/sceDisplay.h"
 #include "Core/MIPS/MIPS.h"
 #include "Core/MemMap.h"
@@ -142,6 +143,26 @@ uint64_t HostFrameCount(void *) {
 	return g_frames;
 }
 
+// Input (GN_CAP_INPUT): the buttons the pack holds, added to the player's at each pad sample. The
+// PSP has no A or B; those bits are ignored.
+void HostButtonsSet(void *, uint32_t held) {
+	static const struct {
+		uint32_t gn;
+		u32 psp;
+	} MAP[] = {
+		{GN_BUTTON_UP, CTRL_UP}, {GN_BUTTON_DOWN, CTRL_DOWN}, {GN_BUTTON_LEFT, CTRL_LEFT}, {GN_BUTTON_RIGHT, CTRL_RIGHT},
+		{GN_BUTTON_START, CTRL_START}, {GN_BUTTON_SELECT, CTRL_SELECT}, {GN_BUTTON_L, CTRL_LTRIGGER}, {GN_BUTTON_R, CTRL_RTRIGGER},
+		{GN_BUTTON_CROSS, CTRL_CROSS}, {GN_BUTTON_CIRCLE, CTRL_CIRCLE}, {GN_BUTTON_SQUARE, CTRL_SQUARE}, {GN_BUTTON_TRIANGLE, CTRL_TRIANGLE},
+	};
+	u32 psp = 0;
+	for (const auto &m : MAP) {
+		if (held & m.gn) {
+			psp |= m.psp;
+		}
+	}
+	__CtrlSetHostHeld(psp);
+}
+
 // A PARAM.SFO DISC_ID as packs name PSP games: upper case, no dash ("ULUS10500").
 void MakeGameId(const std::string &discId, GnGameId *id) {
 	memset(id, 0, sizeof(*id));
@@ -168,7 +189,9 @@ void FillCore() {
 
 	memset(&g_core, 0, sizeof(g_core));
 	MakeGameId(g_paramSFO.GetDiscID(), &g_core.id);
-	g_core.capabilities = 0;  // None of the GBA ones: packs for PSP games need only memory.
+	// None of the GBA ones. Input, so a pack's touch menu can press the game's buttons.
+	g_core.capabilities = GN_CAP_INPUT;
+	g_core.buttonsSet = HostButtonsSet;
 	g_core.regions = g_regions;
 	g_core.regionCount = sizeof(g_regions) / sizeof(g_regions[0]);
 	g_core.read = HostRead;
@@ -618,6 +641,8 @@ void StopPack() {
 		g_audioOn = false;
 	}
 	gn_runtime_stop();
+	// Core lets go as the pack stops; this makes sure, whatever happened.
+	__CtrlSetHostHeld(0);
 	g_running = false;
 	g_runningPack.clear();
 }
