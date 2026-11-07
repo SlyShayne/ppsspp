@@ -1,0 +1,109 @@
+// Persona 3 Portable (USA): the title screen and Config, on the second screen, following the game.
+// - Black while the game loads, then a fade to the title's blue as the game fades in.
+// - PRESS ANY BUTTON: tap anywhere.
+// - The menu: NEW GAME, LOAD GAME, CONFIG, DATA INSTALL, lit as the game's cursor is; tap one to choose it.
+// - Config: every row with its switch and help line; tap ON or OFF to switch, OK to confirm, Back to leave.
+// Taps become the button presses a player would make (scripts/main.lua). The look is this pack's own.
+{
+  "script": "scripts/main.lua",
+  "update_hz": 60,
+  "values": {
+    "screen": { "state": "idle" },
+    "fade": { "state": 1 },
+    "art": { "state": 1 },
+    "cursor": { "state": 1 },
+    "row": { "state": 0 },
+    "v0": { "state": 1 }, "v1": { "state": 0 }, "v2": { "state": 1 },
+    "v3": { "state": 1 }, "v4": { "state": 0 }, "v5": { "state": 0 },
+    "help": { "state": "" },
+    "busy": { "state": 0 },
+  },
+  "colors": {
+    "night": "#0A0E2E",
+    "blue": "#1A2470",
+    "moon": "#3D5BD9",
+    "sky": "#4FA3FF",
+    "ink": "#0A1A40",
+    "gold": "#F6C343",
+    "panel": "#7EB6F2",
+  },
+  "styles": {
+    "item": { "color": "#FFFFFF", "align": "center", "text_align": "center", "size": 52, "radius": 40 },
+    "item_lit": { "bg": "#FFFFFF", "color": "#0A1A40" },
+    "rowname": { "bg": "#0A2A5A", "color": "#E8F1FF", "size": 38, "pad": [0, 24], "align": "center" },
+    "rowname_lit": { "bg": "#041634", "border": 4, "border_color": "#FFFFFF" },
+    "half": { "bg": "#0A2A5A", "color": "#4FA3FF", "size": 36, "align": "center", "text_align": "center" },
+    "half_lit": { "bg": "#F6C343", "color": "#0A1A40" },
+    "button": { "bg": "#0A2A5A", "color": "#FFFFFF", "size": 36, "align": "center", "text_align": "center", "radius": 12 },
+  },
+  "start": "home",
+  "pages": {
+    "home": {
+      "bg": "#000000",
+      "widgets": [
+        // ---- the title's background: the fade, PRESS ANY BUTTON and the menu ----
+        { "type": "group", "rect": [0, 0, 1240, 1080], "visible": "screen == 'fade' || screen == 'pab' || screen == 'menu' || screen == 'title'", "children": [
+          { "type": "rect", "rect": [0, 0, 1240, 1080], "bg": "blue" },
+          { "type": "rect", "rect": [330, -140, 720, 720], "bg": "moon", "radius": 360, "opacity": "0.55" },
+          { "type": "label", "rect": [0, 150, 1240, 200], "text": "P3P", "size": 180, "color": "#FFFFFF", "text_align": "center" },
+          { "type": "label", "rect": [0, 360, 1240, 60], "text": "PERSONA3 PORTABLE", "size": 44, "color": "sky", "text_align": "center" },
+
+          // PRESS ANY BUTTON: anywhere is the button.
+          { "type": "rect", "rect": [0, 0, 1240, 1080], "visible": "screen == 'pab'", "on_tap": { "call": "tap_any" } },
+          { "type": "label", "rect": [0, 760, 1240, 70], "visible": "screen == 'pab'", "text": "PRESS ANY BUTTON", "size": 56,
+            "color": "#FFFFFF", "text_align": "center", "opacity": "0.6 + 0.4 * sin(@ui_ms * 0.36)" },
+
+          // The menu, lit where the game's cursor is.
+          { "type": "group", "rect": [0, 0, 1240, 1080], "visible": "screen == 'menu'", "children": [
+            { "type": "label", "rect": [270, 560, 700, 90], "text": "NEW GAME", "class": "item", "class_if": { "item_lit": "cursor == 0" }, "on_tap": { "call": "tap_menu", "args": [0] } },
+            { "type": "label", "rect": [270, 670, 700, 90], "text": "LOAD GAME", "class": "item", "class_if": { "item_lit": "cursor == 1" }, "on_tap": { "call": "tap_menu", "args": [1] } },
+            { "type": "label", "rect": [270, 780, 700, 90], "text": "CONFIG", "class": "item", "class_if": { "item_lit": "cursor == 2" }, "on_tap": { "call": "tap_menu", "args": [2] } },
+            { "type": "label", "rect": [270, 890, 700, 90], "text": "DATA INSTALL", "class": "item", "class_if": { "item_lit": "cursor == 3" }, "on_tap": { "call": "tap_menu", "args": [3] } },
+          ] },
+
+          // While the game fades in, so does this, from black.
+          { "type": "rect", "rect": [0, 0, 1240, 1080], "bg": "#000000", "visible": "screen == 'fade'", "opacity": "1 - fade" },
+        ] },
+
+        // ---- Config ----
+        { "type": "group", "rect": [0, 0, 1240, 1080], "visible": "screen == 'config'", "children": [
+          { "type": "rect", "rect": [0, 0, 1240, 1080], "bg": "panel" },
+          { "type": "rect", "rect": [0, 20, 1240, 90], "bg": "sky" },
+          { "type": "label", "rect": [60, 20, 600, 90], "text": "CONFIG", "size": 72, "color": "#E8F4FF" },
+
+          { "type": "label", "rect": [60, 135, 700, 80], "text": "Voices", "class": "rowname", "class_if": { "rowname_lit": "row == 0" }, "on_tap": { "call": "tap_row", "args": [0] } },
+          { "type": "label", "rect": [780, 135, 200, 80], "text": "ON", "class": "half", "class_if": { "half_lit": "v0 == 1" }, "on_tap": { "call": "tap_switch", "args": [0, 1] } },
+          { "type": "label", "rect": [980, 135, 200, 80], "text": "OFF", "class": "half", "class_if": { "half_lit": "v0 == 0" }, "on_tap": { "call": "tap_switch", "args": [0, 0] } },
+
+          { "type": "label", "rect": [60, 230, 700, 80], "text": "Auto Text", "class": "rowname", "class_if": { "rowname_lit": "row == 1" }, "on_tap": { "call": "tap_row", "args": [1] } },
+          { "type": "label", "rect": [780, 230, 200, 80], "visible": "v0 == 1", "text": "ON", "class": "half", "class_if": { "half_lit": "v1 == 1" }, "on_tap": { "call": "tap_switch", "args": [1, 1] } },
+          { "type": "label", "rect": [980, 230, 200, 80], "visible": "v0 == 1", "text": "OFF", "class": "half", "class_if": { "half_lit": "v1 == 0" }, "on_tap": { "call": "tap_switch", "args": [1, 0] } },
+          { "type": "label", "rect": [780, 230, 400, 80], "visible": "v0 == 0", "text": "NONE", "class": "half" },
+
+          { "type": "label", "rect": [60, 325, 700, 80], "text": "Cursor Memory", "class": "rowname", "class_if": { "rowname_lit": "row == 2" }, "on_tap": { "call": "tap_row", "args": [2] } },
+          { "type": "label", "rect": [780, 325, 200, 80], "text": "ON", "class": "half", "class_if": { "half_lit": "v2 == 1" }, "on_tap": { "call": "tap_switch", "args": [2, 1] } },
+          { "type": "label", "rect": [980, 325, 200, 80], "text": "OFF", "class": "half", "class_if": { "half_lit": "v2 == 0" }, "on_tap": { "call": "tap_switch", "args": [2, 0] } },
+
+          { "type": "label", "rect": [60, 420, 700, 80], "text": "Tactics Memory", "class": "rowname", "class_if": { "rowname_lit": "row == 3" }, "on_tap": { "call": "tap_row", "args": [3] } },
+          { "type": "label", "rect": [780, 420, 200, 80], "text": "ON", "class": "half", "class_if": { "half_lit": "v3 == 1" }, "on_tap": { "call": "tap_switch", "args": [3, 1] } },
+          { "type": "label", "rect": [980, 420, 200, 80], "text": "OFF", "class": "half", "class_if": { "half_lit": "v3 == 0" }, "on_tap": { "call": "tap_switch", "args": [3, 0] } },
+
+          { "type": "label", "rect": [60, 515, 700, 80], "text": "Invert Rotation", "class": "rowname", "class_if": { "rowname_lit": "row == 4" }, "on_tap": { "call": "tap_row", "args": [4] } },
+          { "type": "label", "rect": [780, 515, 200, 80], "text": "ON", "class": "half", "class_if": { "half_lit": "v4 == 1" }, "on_tap": { "call": "tap_switch", "args": [4, 1] } },
+          { "type": "label", "rect": [980, 515, 200, 80], "text": "OFF", "class": "half", "class_if": { "half_lit": "v4 == 0" }, "on_tap": { "call": "tap_switch", "args": [4, 0] } },
+
+          { "type": "label", "rect": [60, 610, 700, 80], "text": "Data Install", "class": "rowname", "class_if": { "rowname_lit": "row == 5" }, "on_tap": { "call": "tap_row", "args": [5] } },
+          { "type": "label", "rect": [780, 610, 200, 80], "text": "ON", "class": "half", "class_if": { "half_lit": "v5 == 1" }, "on_tap": { "call": "tap_switch", "args": [5, 1] } },
+          { "type": "label", "rect": [980, 610, 200, 80], "text": "OFF", "class": "half", "class_if": { "half_lit": "v5 == 0" }, "on_tap": { "call": "tap_switch", "args": [5, 0] } },
+
+          { "type": "label", "rect": [60, 705, 700, 80], "text": "Confirm", "class": "rowname", "class_if": { "rowname_lit": "row == 6" }, "on_tap": { "call": "tap_row", "args": [6] } },
+          { "type": "label", "rect": [780, 705, 400, 80], "text": "OK", "class": "half", "class_if": { "half_lit": "row == 6" }, "on_tap": { "call": "tap_confirm" } },
+
+          { "type": "label", "rect": [60, 805, 1120, 130], "text": "> {help}", "size": 36, "line_h": 54, "color": "ink", "wrap": true },
+
+          { "type": "label", "rect": [940, 960, 240, 80], "text": "Back", "class": "button", "on_tap": { "call": "tap_back" } },
+        ] },
+      ],
+    },
+  },
+}

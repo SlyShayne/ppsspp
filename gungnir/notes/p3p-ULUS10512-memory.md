@@ -11,7 +11,7 @@ checked across a full restart.
 
 | Address | What | Values |
 |---|---|---|
-| `0x093BAF30` | Title phase | 5 fading in, 7 PRESS ANY BUTTON, 9 main menu; `0xCCCCCCCC` in the attract mode (logos, opening) |
+| `0x093BAF30` | Title phase | 5 fading in, 7 PRESS ANY BUTTON, 9 main menu, 10 or 16 Config (both seen, steady); `0xCCCCCCCC` in the attract mode (logos, opening). Left idle, the menu goes back to 7 |
 | `0x093BAF34` | (with the phase) | 0 while fading in, 8 after |
 | `0x093BAF38`, `0x093BAF3C` | Timers within the phase | count up |
 | `0x093BAF48` | Title art | 1 female protagonist, 0 male (alternates between visits) |
