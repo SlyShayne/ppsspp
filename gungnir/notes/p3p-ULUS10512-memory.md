@@ -115,10 +115,14 @@ options' text (`jal 0x0897E33C` at `0x08985698`, a1 = 1, more than 0 once all of
 bits 3–5 from 0x18 to 0x20). The box and the highlight bar are queued from the window code around
 `0x0898BB5C` (`jal 0x0898973C`, the box at alpha 0xFF) and `0x0898BBA0` (`jal 0x08989828`, the bar:
 `#EC447F` with the female protagonist, else `#428AFF`; unselected options' text `#1058CD` for him).
-Replacing those two with `nop` and the text call with `li v0, 1` leaves the conversation as it was (dimmed
-behind the question) and the choice working with nothing of it drawn. The box: 272 x (14 + 21 per
-option) PSP px at (13, 144) for two options, rim `#C7D0C9`, inner `#CDD5CF`, the bar 250 x 20 from 8 px
-in, an 8 px shadow below; it grows up from its bottom edge over about 8 frames as it opens.
+Opening and closing are drawn by other calls: `jal 0x0898973C` at `0x0898B848` (the box as it opens, 6
+frames at 30 Hz, scaled by a quarter sine of a counter at `0x08C3EF5E`) and `0x0898B644`, with its bar at
+`0x0898B688` (`jal 0x08989828`), as it closes (5 frames, straight). Replacing all five queue calls with `nop`
+and the text call with `li v0, 1` leaves the conversation as it was (dimmed behind the question) and the
+choice working with nothing of it drawn. The box: 272 x (14 + 21 per option) PSP px at (13, 144) for two
+options, both from its bottom edge. An opaque `#C7D0C9` rim, 5 px wide (11 at the right, 7 at the
+bottom), round a panel of the same colour at about 90% opacity (`#CDD5CF` over white, `#B6BEB8` over
+near-black); the bar 250 x 20 from 8 px in; an 8 px shadow below.
 
 ## Draw lists (not state)
 

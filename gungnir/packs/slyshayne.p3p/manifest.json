@@ -19,7 +19,7 @@
     "trail_d0": { "state": 3 }, "trail_d1": { "state": 2 }, "trail_d2": { "state": 1 }, "trail_d3": { "state": 0 },
     "trail_f0": { "state": 0.84 }, "trail_f1": { "state": 0.42 }, "trail_f2": { "state": 0.05 }, "trail_f3": { "state": 0 },
     "row": { "state": 0 },
-    "ch_open": { "state": 0 }, "ch_n": { "state": 2 }, "ch_cursor": { "state": 0 }, "ch_bar": { "state": "#428AFF" },
+    "ch_open": { "state": 0 }, "ch_text": { "state": 0 }, "ch_n": { "state": 2 }, "ch_cursor": { "state": 0 }, "ch_bar": { "state": "#428AFF" },
     "ch_t0": { "state": "" }, "ch_t1": { "state": "" }, "ch_t2": { "state": "" }, "ch_t3": { "state": "" },
     "ch_t4": { "state": "" }, "ch_t5": { "state": "" }, "ch_t6": { "state": "" }, "ch_t7": { "state": "" },
     "ch_f0": { "state": "white" }, "ch_f1": { "state": "white" }, "ch_f2": { "state": "white" }, "ch_f3": { "state": "white" },
@@ -167,15 +167,19 @@
           { "type": "rect", "rect": [620, 0, 620, 1080], "visible": "screen == 'select'", "on_tap": { "call": "tap_pick", "args": [1] } },
         ] },
         // ---- A choice in a conversation (Yes/No and the like), here instead of on the game's screen: its box at
-        // the game's size (4x), in the game's colours and font, growing up from its bottom edge as the game's
-        // does. Tapping an option moves the cursor to it; tapping the one it's on chooses it.
-        { "type": "group", "rect": [76, "540 + (60 + 84 * ch_n) / 2 - (40 + (20 + 84 * ch_n) * ch_open)", 1088, "40 + (20 + 84 * ch_n) * ch_open"],
-          "visible": "ch_open > 0", "children": [
-          { "type": "rect", "rect": [0, 8, 1088, "40 + (20 + 84 * ch_n) * ch_open"], "bg": "#48000000", "radius": 16 },
-          { "type": "rect", "rect": [0, 0, 1088, "40 + (20 + 84 * ch_n) * ch_open"], "bg": "#C7D0C9", "radius": 16 },
-          { "type": "rect", "rect": [20, 20, 1024, "(20 + 84 * ch_n) * ch_open - 8"], "bg": "#CCD4CE", "radius": 10, "visible": "ch_open > 0.3" },
-          { "type": "group", "rect": [0, 0, 1088, "60 + 84 * ch_n"], "visible": "ch_open >= 1", "children": [
-            { "type": "rect", "rect": [32, "32 + 84 * ch_cursor", 1000, 80], "bg": "ch_bar", "radius": 6 },
+        // the game's size (4x), in the game's colours and font, halfway between the middle of this screen and
+        // its bottom. It opens and closes from its bottom edge as the game's does. An opaque rim (20 px, 43 at the
+        // right, 28 at the bottom) round a panel the scene shows through a little. Tapping an option moves the
+        // cursor to it; tapping the one it's on chooses it.
+        { "type": "group", "rect": [76, "810 - 3 * (60 + 84 * ch_n) / 4", 1088, "60 + 84 * ch_n"], "visible": "ch_open > 0",
+          "scale_y": "ch_open", "origin": [0.5, 1], "children": [
+          { "type": "rect", "rect": [0, "40 + 84 * ch_n", 1088, 28], "bg": "#48000000", "radius": 16 },
+          { "type": "rect", "rect": [0, 0, 1088, "60 + 84 * ch_n"], "border": 20, "border_color": "#C7D0C9", "radius": 16 },
+          { "type": "rect", "rect": [1044, 20, 24, "20 + 84 * ch_n"], "bg": "#C7D0C9" },
+          { "type": "rect", "rect": [20, "32 + 84 * ch_n", 1024, 8], "bg": "#C7D0C9" },
+          { "type": "rect", "rect": [20, 20, 1024, "12 + 84 * ch_n"], "bg": "#E6C7D0C9" },
+          { "type": "rect", "rect": [32, "32 + 84 * ch_cursor", 1000, 80], "bg": "ch_bar", "radius": 6 },
+          { "type": "group", "rect": [0, 0, 1088, "60 + 84 * ch_n"], "visible": "ch_text", "children": [
             // The game's font (gungnir/tools/p3p_font.py), its letters' ink 61 px in and 23 px below the bar's top.
             { "type": "label", "repeat": "8", "visible": "{i} < ch_n", "rect": [61, "25 + 84 * {i}", 970, 104], "text": "{ch_t{i}}",
               "font": "assets/game/font_msg_{ch_f{i}}.json", "size": 104 },

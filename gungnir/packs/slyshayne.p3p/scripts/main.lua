@@ -181,7 +181,10 @@ end
 local WIN_LIST     = 0x08C3E73C
 local WIN_ASKING   = 0x800
 local CHOICE_MAX   = 8
-local CHOICE_OPEN  = 8           -- frames the box takes to grow open, as the game's does
+-- Frames the box takes to open (eased, a quarter sine) and to close (straight), as the game's: 6 and 5 of
+-- its 30 Hz frames.
+local CHOICE_OPEN  = 12
+local CHOICE_CLOSE = 10
 local FEMALE_FLAGS = 0x08E68498  -- bit 7: the female protagonist (game flag 0x1007), who has pink highlights
 -- The game's code that draws a choice, in the window code at 0x0898B0F4 and the window loop at 0x08985510
 -- (US 1.00): each is checked to be the instruction expected before it's replaced, so another version is
@@ -192,10 +195,14 @@ local CHOICE_PATCHES = {
     -- jal 0x0897E33C, drawing the options' text (more than 0 once all of it is in): li v0, 1, so the
     -- game takes it as shown at once and goes on to take input as before.
     { 0x08985698, 0x0E25F8CF, 0x24020001 },
+    { 0x0898B848, 0x0E2625CF, 0x00000000 },  -- jal 0x0898973C, the box as it opens: nothing
+    { 0x0898B644, 0x0E2625CF, 0x00000000 },  -- jal 0x0898973C, the box as it closes: nothing
+    { 0x0898B688, 0x0E26260A, 0x00000000 },  -- jal 0x08989828, its bar as it closes: nothing
 }
 
 local choiceWindow = nil  -- the window asking, if one is
 local choiceSince = nil   -- the frame its box started opening here
+local choiceGone = nil    -- the frame it stopped asking, while its box closes here
 
 local function ram(a)
     return a >= 0x08800000 and a < 0x0A000000
@@ -249,16 +256,23 @@ local function choice()
     local w = askingWindow()
     choiceWindow = w
     if not w then
-        choiceSince = nil
-        publish("ch_open", 0)
+        -- Closing: the box shrinks as it was last shown, bar and all, without its text.
+        if choiceSince then choiceGone, choiceSince = frame, nil end
+        local left = choiceGone and 1 - ramp(frame - choiceGone, { 0, CHOICE_CLOSE }) or 0
+        if left == 0 then choiceGone = nil end
+        publish("ch_open", left)
+        publish("ch_text", 0)
         return
     end
     choiceSince = choiceSince or frame
+    choiceGone = nil
     local n = math.min(mem.u16(w + 0x48), CHOICE_MAX)
     local cursor = mem.u16(w + 0x4A)
     local female = (mem.u32(FEMALE_FLAGS) >> 7) & 1 == 1
     local lines = options(w)
-    publish("ch_open", ramp(frame - choiceSince, { 0, CHOICE_OPEN }))
+    local open = ramp(frame - choiceSince, { 0, CHOICE_OPEN })
+    publish("ch_open", math.sin(open * math.pi / 2))
+    publish("ch_text", open >= 1 and 1 or 0)
     publish("ch_n", n)
     publish("ch_cursor", cursor)
     publish("ch_bar", female and "#EC447F" or "#428AFF")
