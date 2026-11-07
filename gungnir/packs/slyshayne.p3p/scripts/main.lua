@@ -98,6 +98,17 @@ local function selectObject()
     return mem.u32(SEL_OBJECT) == SEL_SIZE and mem.u32(SEL_OBJECT + 0x1C) == SEL_OBJECT
 end
 
+-- A value that eases toward its target a fifth of the way a frame (about 20 frames to settle), starting where
+-- it first is.
+local GLIDE = 0.2
+local glides = {}
+local function glide(key, target)
+    local at = glides[key] or target
+    at = at + (target - at) * GLIDE
+    glides[key] = at
+    return at
+end
+
 local function rawFloat(address)
     local x = string.unpack("<f", string.pack("<I4", mem.u32(address)))
     if x ~= x or x < -1000 or x > 1000 then return 0 end  -- not a number while it's set up
@@ -126,10 +137,11 @@ local function select()
     end
     publish("him_flat", himFlat)
     publish("her_flat", herFlat)
-    -- How far each is forward (toward the middle), at 4x: the game's own, eased as it moves them (-10 PSP px
-    -- each through the dialogue).
-    publish("him_dx", SCALE_X * rawFloat(SEL_OFFSETS))
-    publish("her_dx", SCALE_X * rawFloat(SEL_OFFSETS + 4))
+    -- How far each is forward (toward the middle), at 4x: the game's own (-10 PSP px each through the
+    -- dialogue), eased here too, since the one going back jumps there on the game's screen (hidden by its
+    -- flat colour) and wouldn't here.
+    publish("him_dx", glide("him", SCALE_X * rawFloat(SEL_OFFSETS)))
+    publish("her_dx", glide("her", SCALE_X * rawFloat(SEL_OFFSETS + 4)))
     -- Each Orpheus's trail, like the portraits' on the game's screen: TRAIL_COPIES silhouettes drift away
     -- one spacing every TRAIL_PERIOD frames, blending into the background as they go (gone by the last
     -- spacing), while a new one comes out from behind. Copy i is drawn farthest first.
@@ -314,7 +326,10 @@ function update(info)
     -- Between the title going and the select's object coming (about 8 frames), stay black.
     if s == "idle" and screen == "newgame" and frame - blackStart < 120 then s = "newgame" end
     if s == "newgame" and screen ~= "newgame" then blackStart = frame end
-    if s ~= "select" then whiteStart = nil end
+    if s ~= "select" then
+        whiteStart = nil
+        glides = {}
+    end
     -- Config is on this screen instead: zero its opacity on the game's, each frame, which hides all of it
     -- and leaves the title behind (its taps and buttons work as before). Its object is checked from when
     -- it's made, before its first frame is drawn.

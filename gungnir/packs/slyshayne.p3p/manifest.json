@@ -152,21 +152,32 @@
           { "type": "group", "rect": [0, 0, 1240, 1080], "opacity": "white", "children": [
             { "type": "rect", "rect": [0, 0, 1240, 1080], "bg": "#FFFFFF" },
             { "type": "group", "rect": [0, 0, 1240, 1080], "visible": "screen == 'select'", "children": [
-              // Each colour from its edge to behind its Orpheus.
-              { "type": "rect", "rect": [0, 0, "230 + him_dx", 1080], "bg": "sel_him" },
-              { "type": "rect", "rect": ["1051 - her_dx", 0, "189 + her_dx", 1080], "bg": "sel_her" },
-              { "type": "group", "rect": ["-265 + him_dx", 0, 825, 1080], "children": [
-                { "type": "image", "repeat": "4", "visible": "him_flat < 1", "rect": ["-80 * trail_d{i} * (1 - him_flat)", 0, 825, 1080],
-                  "src": "assets/game/orpheus_male_flat.png", "fill": "stretch", "tint": "mix('#1579F4', '#509BF9', trail_f{i})" },
+              // Each colour from its edge to a line through its Orpheus, from where the figure touches the top to the
+              // foot that keeps it inside the figure (the points are in the picture's own pixels), and
+              // white masks the other side of the line over the trails, so neither shows a seam.
+              { "type": "shape", "rect": ["-1200 + him_dx", 0, 1885, 1080], "antialias": true, "shapes": [
+                { "kind": "polygon", "points": [[0, -2],[1332, -2],[1341, 40],[1351, 80],[1360, 120],[1370, 160],[1379, 200],[1389, 240],[1398, 280],[1408, 320],[1417, 360],[1427, 400],[1421, 440],[1419, 480],[1453, 520],[1465, 560],[1474, 600],[1484, 640],[1540, 680],[1481, 720],[1506, 760],[1522, 800],[1531, 840],[1541, 880],[1550, 920],[1560, 960],[1569, 1000],[1579, 1040],[1588, 1082],[0, 1082]], "fill": "sel_him" } ] },
+              { "type": "shape", "rect": ["615 - her_dx", 0, 2000, 1080], "antialias": true, "shapes": [
+                { "kind": "polygon", "points": [[356, -2],[371, 40],[385, 80],[400, 120],[414, 160],[429, 200],[443, 240],[458, 280],[472, 320],[487, 360],[501, 400],[516, 440],[530, 480],[545, 520],[559, 560],[574, 600],[589, 640],[600, 680],[662, 720],[612, 760],[630, 800],[652, 840],[668, 880],[686, 920],[705, 960],[719, 1000],[734, 1040],[748, 1082],[1900, 1082],[1900, -2]], "fill": "sel_her" } ] },
+              { "type": "image", "repeat": "4", "visible": "him_flat < 1", "rect": ["-200 + him_dx - 80 * trail_d{i} * (1 - him_flat)", 0, 825, 1080],
+                "src": "assets/game/orpheus_male_flat.png", "fill": "stretch", "tint": "mix('#1579F4', '#509BF9', trail_f{i})" },
+              { "type": "image", "repeat": "4", "visible": "her_flat < 1", "rect": ["615 - her_dx + 80 * trail_d{i} * (1 - her_flat)", 0, 927, 1080],
+                "src": "assets/game/orpheus_female_flat.png", "fill": "stretch", "tint": "mix('#F059C9', '#FB8BDE', trail_f{i})" },
+              { "type": "shape", "rect": ["-200 + him_dx", 0, 885, 1080], "antialias": true, "shapes": [
+                { "kind": "polygon", "points": [[332, -2],[341, 40],[351, 80],[360, 120],[370, 160],[379, 200],[389, 240],[398, 280],[408, 320],[417, 360],[427, 400],[421, 440],[419, 480],[453, 520],[465, 560],[474, 600],[484, 640],[540, 680],[481, 720],[506, 760],[522, 800],[531, 840],[541, 880],[550, 920],[560, 960],[569, 1000],[579, 1040],[588, 1082],[885, 1082],[885, -2]], "fill": "#FFFFFF" } ] },
+              { "type": "shape", "rect": ["555 - her_dx", 0, 987, 1080], "antialias": true, "shapes": [
+                { "kind": "polygon", "points": [[0, -2],[416, -2],[431, 40],[445, 80],[460, 120],[474, 160],[489, 200],[503, 240],[518, 280],[532, 320],[547, 360],[561, 400],[576, 440],[590, 480],[605, 520],[619, 560],[634, 600],[649, 640],[660, 680],[722, 720],[672, 760],[690, 800],[712, 840],[728, 880],[746, 920],[765, 960],[779, 1000],[794, 1040],[808, 1082],[0, 1082]], "fill": "#FFFFFF" } ] },
+              // Each Orpheus: its drop shadow and outline, in colour, and its flat colour wiping across from the middle.
+              { "type": "group", "rect": ["-200 + him_dx", 0, 825, 1080], "children": [
+                { "type": "image", "rect": [-60, -60, 945, 1200], "src": "assets/game/orpheus_male_shadow.png", "fill": "stretch" },
                 { "type": "image", "rect": [-6, -6, 837, 1092], "src": "assets/game/orpheus_male_edge.png", "fill": "stretch", "tint": "sel_him_dark" },
                 { "type": "image", "rect": [0, 0, 825, 1080], "src": "assets/game/orpheus_male_full.png", "fill": "stretch" },
                 { "type": "group", "rect": ["825 * (1 - him_flat)", 0, "825 * him_flat", 1080], "clip": true, "visible": "him_flat > 0", "children": [
                   { "type": "image", "rect": ["-825 * (1 - him_flat)", 0, 825, 1080], "src": "assets/game/orpheus_male_flat.png", "fill": "stretch", "tint": "sel_him_dark" },
                 ] },
               ] },
-              { "type": "group", "rect": ["680 - her_dx", 0, 927, 1080], "children": [
-                { "type": "image", "repeat": "4", "visible": "her_flat < 1", "rect": ["80 * trail_d{i} * (1 - her_flat)", 0, 927, 1080],
-                  "src": "assets/game/orpheus_female_flat.png", "fill": "stretch", "tint": "mix('#F059C9', '#FB8BDE', trail_f{i})" },
+              { "type": "group", "rect": ["615 - her_dx", 0, 927, 1080], "children": [
+                { "type": "image", "rect": [-60, -60, 1047, 1200], "src": "assets/game/orpheus_female_shadow.png", "fill": "stretch" },
                 { "type": "image", "rect": [-6, -6, 939, 1092], "src": "assets/game/orpheus_female_edge.png", "fill": "stretch", "tint": "sel_her_dark" },
                 { "type": "image", "rect": [0, 0, 927, 1080], "src": "assets/game/orpheus_female_full.png", "fill": "stretch" },
                 { "type": "group", "rect": [0, 0, "927 * her_flat", 1080], "clip": true, "visible": "her_flat > 0", "children": [

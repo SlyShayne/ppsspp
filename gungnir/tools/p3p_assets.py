@@ -152,12 +152,13 @@ def main(src, dst):
 
 ORPHEUS_HEIGHT = 1080  # the second screen's height: each Orpheus touches its top and bottom
 ORPHEUS_EDGE = 6       # the outline round the full-colour one, as the protagonists have on the game's screen
+ORPHEUS_SHADOW = 60    # room round the drop shadow
 
 
 def orpheus(src, dst):
     """Orpheus, his and hers, cropped to the figure and scaled smoothly to ORPHEUS_HEIGHT (the pack draws them
     1:1, so their edges stay smooth): _full in colour, _flat and _edge white (the pack tints them), _edge
-    ORPHEUS_EDGE px bigger all round. [src] holds orpheus_male.png and orpheus_female.png: the game's
+    ORPHEUS_EDGE px bigger all round, and _shadow, black, ORPHEUS_SHADOW px bigger. [src] holds orpheus_male.png and orpheus_female.png: the game's
     data/camp/persona/pst_001.tmx and pst_0AE.tmx (in PSP_GAME/USRDIR/umd0.cpk), decoded to RGBA."""
     for name in ("orpheus_male", "orpheus_female"):
         image = Image.open(os.path.join(src, name + ".png")).convert("RGBA")
@@ -179,6 +180,15 @@ def orpheus(src, dst):
         edge = Image.new("RGBA", grown.size, (255, 255, 255, 0))
         edge.putalpha(grown)
         edge.save(os.path.join(dst, name + "_edge.png"))
+        # The drop shadow round the outline, as the protagonists' on the game's screen: about 36% black
+        # beside it, gone some 45 px out, not offset. ORPHEUS_SHADOW px bigger all round.
+        s = ORPHEUS_SHADOW
+        spread = Image.new("L", (size[0] + 2 * s, size[1] + 2 * s), 0)
+        spread.paste(grown, (s - e, s - e))
+        spread = spread.filter(ImageFilter.GaussianBlur(18)).point(lambda a: round(a * 0.42))
+        shadow = Image.new("RGBA", spread.size, (0, 0, 0, 0))
+        shadow.putalpha(spread)
+        shadow.save(os.path.join(dst, name + "_shadow.png"))
         print("%s: %dx%d" % (name, size[0], size[1]))
     print("wrote the Orpheus pictures to", dst)
 
