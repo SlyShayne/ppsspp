@@ -13,7 +13,8 @@
     "screen": { "state": "idle" },
     "fade_art": { "state": 1 }, "fade_bg": { "state": 1 }, "fade_text": { "state": 1 }, "breath": { "state": 1 },
     "female_op": { "state": 1 }, "male_op": { "state": 0 }, "female_dx": { "state": 0 }, "male_dx": { "state": 0 },
-    "cursor": { "state": 1 }, "pill": { "state": 1 },
+    "cursor": { "state": 1 }, "pill": { "state": 1 }, "menu_op": { "state": 1 },
+    "cfg_panel": { "state": 1 }, "cfg_rows": { "state": 1 },
     "row": { "state": 0 },
     "v0": { "state": 1 }, "v1": { "state": 0 }, "v2": { "state": 1 },
     "v3": { "state": 1 }, "v4": { "state": 0 }, "v5": { "state": 0 },
@@ -32,7 +33,7 @@
       "widgets": [
         // ---- the title: the game's own art (assets/game, built by gungnir/tools/p3p_assets.py) at the
         // top screen's 4x, rearranged for this narrower canvas. Each part fades in when the game's does.
-        { "type": "group", "rect": [0, 0, 1240, 1080], "visible": "screen == 'fade' || screen == 'pab' || screen == 'menu'", "children": [
+        { "type": "group", "rect": [0, 0, 1240, 1080], "visible": "screen != 'idle'", "children": [
           { "type": "rect", "rect": [0, 0, 1240, 1080], "bg": "#020328", "opacity": "fade_art" },
           { "type": "image", "rect": [0, 0, 1240, 1080], "src": "assets/gradient.png", "fill": "stretch", "opacity": "fade_bg * breath" },
           { "type": "image", "rect": ["300 + 180 * (1 - fade_bg)", -216, 1024, 1024], "src": "assets/game/moon.png", "fill": "stretch", "opacity": "fade_bg" },
@@ -43,11 +44,12 @@
 
           // PRESS ANY BUTTON: anywhere is the button.
           { "type": "rect", "rect": [0, 0, 1240, 1080], "visible": "screen == 'pab'", "on_tap": { "call": "tap_any" } },
-          { "type": "image", "rect": [576, 872, 604, 36], "src": "assets/game/text_pab.png", "fill": "stretch", "visible": "screen != 'menu'", "opacity": "fade_text" },
+          { "type": "image", "rect": [576, 872, 604, 36], "src": "assets/game/text_pab.png", "fill": "stretch", "visible": "screen == 'fade' || screen == 'pab'", "opacity": "fade_text" },
 
           // The menu: the items in white; the game's pill slides to the chosen one as the game's does
-          // (following its eased position), and the text it covers is dark.
-          { "type": "group", "rect": [0, 0, 1240, 1080], "visible": "screen == 'menu'", "children": [
+          // (following its eased position), and the text it covers is dark. It fades out under Config, and
+          // back, as the game's does.
+          { "type": "group", "rect": [0, 0, 1240, 1080], "visible": "screen == 'menu' || screen == 'config'", "opacity": "menu_op", "children": [
             { "type": "image", "rect": [720, 792, 328, 32], "src": "assets/game/text_new.png", "fill": "stretch", "tint": "#F4F4F4" },
             { "type": "image", "rect": [700, 844, 360, 32], "src": "assets/game/text_load.png", "fill": "stretch", "tint": "#F4F4F4" },
             { "type": "image", "rect": [760, 894, 236, 36], "src": "assets/game/text_config.png", "fill": "stretch", "tint": "#F4F4F4" },
@@ -68,20 +70,21 @@
             { "type": "rect", "rect": [560, 934, 680, 52], "on_tap": { "call": "tap_menu", "args": [3] } },
           ] },
 
-          { "type": "image", "rect": [696, 1028, 504, 48], "src": "assets/game/text_copyright.png", "fill": "stretch", "opacity": "fade_text" },
+          { "type": "image", "rect": [696, 1028, 504, 48], "src": "assets/game/text_copyright.png", "fill": "stretch",
+            "opacity": "fade_text * (screen == 'config' ? menu_op : 1)" },
         ] },
 
         // ---- Config: the game's own look (assets/game/cfg_*, built by gungnir/tools/p3p_assets.py) at 4x,
-        // moved 340 px left to fit; the CONFIG word and the button prompts moved in further.
+        // moved 340 px left to fit; the CONFIG word and the button prompts moved in further. Over the title,
+        // fading in and out as the game's does: the panel (cfg_panel), then its rows (cfg_rows).
         { "type": "group", "rect": [0, 0, 1240, 1080], "visible": "screen == 'config'", "children": [
-          { "type": "rect", "rect": [0, 0, 1240, 1080], "bg": "#0B1030" },
-          { "type": "rect", "rect": [0, 76, 1240, 80], "bg": "cfg_header" },
-          { "type": "rect", "rect": [0, 156, 1240, 848], "bg": "cfg_body" },
-          { "type": "rect", "rect": [124, 156, 28, 20], "bg": "cfg_dark" },
-          { "type": "image", "rect": [40, 80, 576, 80], "src": "assets/game/cfg_title.png", "fill": "stretch", "tint": "#C0E3FB" },
+          { "type": "rect", "rect": [0, 76, 1240, 80], "bg": "cfg_header", "opacity": "cfg_panel" },
+          { "type": "rect", "rect": [0, 156, 1240, 848], "bg": "cfg_body", "opacity": "cfg_panel" },
+          { "type": "rect", "rect": [124, 156, 28, 20], "bg": "cfg_dark", "opacity": "cfg_panel" },
+          { "type": "image", "rect": [40, 80, 576, 80], "src": "assets/game/cfg_title.png", "fill": "stretch", "tint": "#C0E3FB", "opacity": "cfg_panel" },
 
           // Each row: its bar and underline, or the dark plate when it's selected; its name (tap: select it).
-          { "type": "group", "repeat": "7", "rect": [0, "185 + 92 * {i}", 1240, 78], "children": [
+          { "type": "group", "repeat": "7", "rect": [0, "185 + 92 * {i}", 1240, 78], "opacity": "cfg_rows", "children": [
             { "type": "rect", "rect": [124, 0, 28, 78], "bg": "cfg_dark", "visible": "row != {i}" },
             { "type": "rect", "rect": [152, 72, 657, 6], "bg": "cfg_dark", "visible": "row != {i}" },
             { "type": "rect", "rect": [809, 0, 319, 78], "bg": "cfg_dark", "visible": "row != {i}" },
@@ -93,7 +96,7 @@
 
           // The six switches: the yellow half on the side that's set, with the slanted edge; NONE for Auto
           // Text while Voices is OFF. Tap ON or OFF to set it.
-          { "type": "group", "repeat": "6", "rect": [0, "185 + 92 * {i}", 1240, 78], "children": [
+          { "type": "group", "repeat": "6", "rect": [0, "185 + 92 * {i}", 1240, 78], "opacity": "cfg_rows", "children": [
             { "type": "shape", "rect": [809, 0, 319, 78], "antialias": true, "visible": "{i} != 1 || v0 == 1", "shapes": [
               { "kind": "polygon", "points": [[0, 0], [195, 0], [117, 78], [0, 78]], "fill": "cfg_yellow", "visible": "v{i} == 1" },
               { "kind": "polygon", "points": [[195, 0], [319, 0], [319, 78], [117, 78]], "fill": "cfg_yellow", "visible": "v{i} == 0" },
@@ -108,20 +111,22 @@
           ] },
 
           // Confirm: OK.
-          { "type": "image", "rect": [932, 764, 68, 28], "src": "assets/game/cfg_ok.png", "fill": "stretch", "tint": "#2695FF" },
+          { "type": "image", "rect": [932, 764, 68, 28], "src": "assets/game/cfg_ok.png", "fill": "stretch", "tint": "#2695FF", "opacity": "cfg_rows" },
           { "type": "rect", "rect": [809, 729, 331, 94], "on_tap": { "call": "tap_confirm" } },
 
           // The selected row's help.
-          { "type": "image", "rect": [128, 852, 32, 28], "src": "assets/game/cfg_arrow.png", "fill": "stretch", "tint": "#003B5D" },
-          { "type": "image", "rect": [156, 813, 1000, 160], "src": "assets/game/cfg_help_{row}.png", "fill": "none", "tint": "#003B5D" },
+          { "type": "image", "rect": [128, 852, 32, 28], "src": "assets/game/cfg_arrow.png", "fill": "stretch", "tint": "#003B5D", "opacity": "cfg_rows" },
+          { "type": "image", "rect": [156, 813, 1000, 160], "src": "assets/game/cfg_help_{row}.png", "fill": "none", "tint": "#003B5D", "opacity": "cfg_rows" },
 
           // The game's button prompts; Back is tappable.
-          { "type": "image", "rect": [560, 1016, 76, 68], "src": "assets/game/cfg_dpad.png", "fill": "stretch" },
-          { "type": "image", "rect": [626, 1015, 172, 60], "src": "assets/game/cfg_switch.png", "fill": "stretch" },
-          { "type": "image", "rect": [872, 1016, 64, 64], "src": "assets/game/cfg_x.png", "fill": "stretch" },
-          { "type": "image", "rect": [928, 1020, 84, 68], "src": "assets/game/cfg_okword.png", "fill": "stretch" },
-          { "type": "image", "rect": [1044, 1016, 64, 64], "src": "assets/game/cfg_o.png", "fill": "stretch" },
-          { "type": "image", "rect": [1100, 1016, 120, 60], "src": "assets/game/cfg_back.png", "fill": "stretch" },
+          { "type": "group", "rect": [0, 1004, 1240, 76], "opacity": "cfg_panel", "children": [
+            { "type": "image", "rect": [560, 12, 76, 68], "src": "assets/game/cfg_dpad.png", "fill": "stretch" },
+            { "type": "image", "rect": [626, 11, 172, 60], "src": "assets/game/cfg_switch.png", "fill": "stretch" },
+            { "type": "image", "rect": [872, 12, 64, 64], "src": "assets/game/cfg_x.png", "fill": "stretch" },
+            { "type": "image", "rect": [928, 16, 84, 68], "src": "assets/game/cfg_okword.png", "fill": "stretch" },
+            { "type": "image", "rect": [1044, 12, 64, 64], "src": "assets/game/cfg_o.png", "fill": "stretch" },
+            { "type": "image", "rect": [1100, 12, 120, 60], "src": "assets/game/cfg_back.png", "fill": "stretch" },
+          ] },
           { "type": "rect", "rect": [1030, 1004, 210, 76], "on_tap": { "call": "tap_back" } },
         ] },
       ],

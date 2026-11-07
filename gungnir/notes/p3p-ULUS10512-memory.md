@@ -41,8 +41,10 @@ The background is vertex colours, not a texture: radial from the top-right corne
 | `0x093C1C90` | Previous row | |
 | `0x093C1CA4` … `0x093C1CB8` | The six options, one word each in row order | 1 ON, 0 OFF |
 | `0x093C1CBC` … `0x093C1CD0` | Which side of each switch is lit | 1 − the option |
-| `0x093C1C5C` | The Config object's pointer to itself (the object is at `0x093C1C40`) | set when it's made |
+| `0x093C1C40` | The Config object's first word (its allocation size) | 0x4A0. **The slot is reused**: LOAD GAME's file loading puts an object of its own there (size 0x160), which also points to itself, so check this too before touching anything here. Writing to the loader's object crashed LOAD GAME |
+| `0x093C1C5C` | The Config object's pointer to itself | set when it's made |
 | `0x093C1C60` | Config's opacity | 0xFF00 while it shows. Writing 0 each frame hides all of it (flat panels, sprites, text) and leaves the title behind; input still works |
+| `0x093C1CF0` (object + 0xB0) + 0x30·k, k = 0..16 | Per-element fades: bits 16–23 are the alpha | Opening: +0xB0, +0x380 and +0x3B0 (the panel) go 0x1F→0xFF in 8 game frames, then the other fourteen (the rows) 0x3F→0xFF in 4; all then read 0x00FFFFFF. Closing: all 0xCC→0 in 5, then the phase goes back to 9 |
 
 Right sets OFF and Left sets ON (no wrap). With Voices OFF, Auto Text shows NONE (its value is
 kept). Circle backs out; Confirm (row 6, Cross) applies. Each row has a help line under the list.
