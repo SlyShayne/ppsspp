@@ -5,6 +5,7 @@
 local TITLE_PHASE = 0x093BAF30  -- 5 fading in, 7 PRESS ANY BUTTON, 9 menu, 10 or 16 Config
 local TITLE_ART   = 0x093BAF48  -- 1 female protagonist, 0 male
 local MENU_CURSOR = 0x093BAF58  -- 0 NEW GAME, 1 LOAD GAME, 2 CONFIG, 3 DATA INSTALL
+local TITLE_CROSSFADE = 0x093BAF64  -- float: 0 PRESS ANY BUTTON, 1 the menu, eased a fifth of the way a game frame
 local CFG_CURSOR  = 0x093C1C8C  -- 0..6, Confirm last
 local CFG_VALUES  = 0x093C1CA4  -- six words, 1 ON
 local CFG_SIDES   = 0x093C1CBC  -- six words, 1 - the value
@@ -87,6 +88,23 @@ local function screenFor(phase)
     return "idle"
 end
 
+-- The protagonists swap each time PRESS ANY BUTTON and the menu change places: the incoming one fades in
+-- while sliding from 48 PSP px (192 here) to the left, as the outgoing one fades out where it is, on the
+-- game's crossfade (0 on PRESS ANY BUTTON, 1 on the menu, eased). This screen shows the other protagonist.
+local SLIDE = 192
+local function portraits(s)
+    local x = string.unpack("<f", string.pack("<I4", mem.u32(TITLE_CROSSFADE)))
+    if x ~= x or x < 0 then x = 0 elseif x > 1 then x = 1 end  -- not a number while the title sets up
+    local p = (s == "menu") and x or 1 - x  -- how far the current one is in
+    if s == "config" then p = 1 end
+    local current = 1 - mem.u32(TITLE_ART)  -- 1 female, 0 male; the game's is the other
+    local female = current == 1
+    publish("female_op", female and p or 1 - p)
+    publish("male_op", female and 1 - p or p)
+    publish("female_dx", female and -SLIDE * (1 - p) or 0)
+    publish("male_dx", female and 0 or -SLIDE * (1 - p))
+end
+
 function update(info)
     frame = info.frame
     local phase = mem.u32(TITLE_PHASE)
@@ -103,7 +121,7 @@ function update(info)
     publish("breath", breath())
     publish("busy", frame < busyUntil and 1 or 0)
     if s ~= "idle" then
-        publish("art", mem.u32(TITLE_ART))
+        portraits(s)
         local cursor = mem.u32(MENU_CURSOR)
         publish("cursor", cursor < MENU_ITEMS and cursor or 1)
     end

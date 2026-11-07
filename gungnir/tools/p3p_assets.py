@@ -51,7 +51,13 @@ def main(src, dst):
         atlas.crop((u, v, u + w, v + h)).save(os.path.join(dst, name))
     cap = atlas.crop((242, 29, 252, 41))
     ImageOps.mirror(cap).save(os.path.join(dst, "pill_right.png"))
-    print("wrote", len(WHOLE) + len(PIECES) + 1, "files to", dst)
+    # The game's own title, without what the pack draws instead: the atlas with only the copyright line.
+    textures = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(dst))), "psp_textures")
+    hidden = Image.new("RGBA", atlas.size, (0, 0, 0, 0))
+    u, v, w, h = PIECES["text_copyright.png"]
+    hidden.paste(atlas.crop((u, v, u + w, v + h)), (u, v))
+    hidden.save(os.path.join(textures, "title_text.png"))
+    print("wrote", len(WHOLE) + len(PIECES) + 1, "files to", dst, "and title_text.png to", textures)
 
 
 if __name__ == "__main__":

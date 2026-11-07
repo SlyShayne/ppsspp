@@ -11,7 +11,7 @@
   "values": {
     "screen": { "state": "idle" },
     "fade_art": { "state": 1 }, "fade_bg": { "state": 1 }, "fade_text": { "state": 1 }, "breath": { "state": 1 },
-    "art": { "state": 1 },
+    "female_op": { "state": 1 }, "male_op": { "state": 0 }, "female_dx": { "state": 0 }, "male_dx": { "state": 0 },
     "cursor": { "state": 1 },
     "row": { "state": 0 },
     "v0": { "state": 1 }, "v1": { "state": 0 }, "v2": { "state": 1 },
@@ -49,9 +49,9 @@
           { "type": "image", "rect": [0, 0, 1240, 1080], "src": "assets/gradient.png", "fill": "stretch", "opacity": "fade_bg * breath" },
           { "type": "image", "rect": ["300 + 180 * (1 - fade_bg)", -216, 1024, 1024], "src": "assets/game/moon.png", "fill": "stretch", "opacity": "fade_bg" },
           { "type": "image", "rect": [740, 584, 512, 512], "src": "assets/game/creature.png", "fill": "stretch", "opacity": "fade_bg" },
-          { "type": "image", "rect": [-200, -21, 1024, 1126], "src": "assets/game/art_female.png", "fill": "stretch", "visible": "art == 1", "opacity": "fade_art" },
-          { "type": "image", "rect": [-200, -21, 1024, 1126], "src": "assets/game/art_male.png", "fill": "stretch", "visible": "art == 0", "opacity": "fade_art" },
-          { "type": "image", "rect": [540, 150, 768, 384], "src": "assets/game/logo.png", "fill": "stretch", "opacity": "fade_art" },
+          // The other protagonist from the game's, swapping as the game's do.
+          { "type": "image", "rect": ["-200 + female_dx", -21, 1024, 1126], "src": "assets/game/art_female.png", "fill": "stretch", "opacity": "fade_art * female_op" },
+          { "type": "image", "rect": ["-200 + male_dx", -21, 1024, 1126], "src": "assets/game/art_male.png", "fill": "stretch", "opacity": "fade_art * male_op" },
 
           // PRESS ANY BUTTON: anywhere is the button.
           { "type": "rect", "rect": [0, 0, 1240, 1080], "visible": "screen == 'pab'", "on_tap": { "call": "tap_any" } },
