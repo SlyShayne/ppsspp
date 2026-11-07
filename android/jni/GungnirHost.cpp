@@ -44,6 +44,9 @@
 #include "Core/MemMap.h"
 #include "Core/SaveState.h"
 #include "Core/System.h"
+#include "GPU/Common/TextureReplacer.h"
+#include "GPU/GPU.h"
+#include "GPU/GPUCommon.h"
 
 const char *const GUNGNIR_CHOICE_AUTO = "";
 const char *const GUNGNIR_CHOICE_NONE = "none";
@@ -609,6 +612,22 @@ std::string ResolvePack(const GnGameId &game) {
 
 // ---- the game's life ----
 
+// A pack's psp_textures/ folder, laid out as a PPSSPP texture pack, replaces the game's textures while it
+// runs, so it can hide what it draws on the other screen instead (unless the player has their own texture
+// pack for the game). The GPU picks it up at its next frame.
+bool g_companionTextures = false;
+
+void UseCompanionTextures(const Path &dir) {
+	if (dir.empty() && !g_companionTextures) {
+		return;
+	}
+	g_companionTextures = !dir.empty();
+	TextureReplacer::SetCompanionTextures(dir);
+	if (gpu) {
+		gpu->NotifyConfigChanged();
+	}
+}
+
 void StartPack(const std::string &folder) {
 	const Path packDir = AppPath("packs") / folder;
 	const Path dataDir = AppPath("packdata") / folder;
@@ -621,6 +640,11 @@ void StartPack(const std::string &folder) {
 	g_paused = false;
 	// Threaded: Core draws on its own worker, into the surface the Java side hands it.
 	gn_runtime_start(&g_core, true, packDir.ToString().c_str(), dataDir.ToString().c_str(), false);
+	const Path textures = packDir / "psp_textures";
+	if (File::IsDirectory(textures)) {
+		INFO_LOG(Log::System, "Gungnir: the pack replaces textures from %s", textures.c_str());
+		UseCompanionTextures(textures);
+	}
 	g_running = true;
 	g_runningPack = folder;
 	{
@@ -643,6 +667,7 @@ void StopPack() {
 	gn_runtime_stop();
 	// Core lets go as the pack stops; this makes sure, whatever happened.
 	__CtrlSetHostHeld(0);
+	UseCompanionTextures(Path());
 	g_running = false;
 	g_runningPack.clear();
 }
