@@ -19,6 +19,11 @@
     "trail_d0": { "state": 3 }, "trail_d1": { "state": 2 }, "trail_d2": { "state": 1 }, "trail_d3": { "state": 0 },
     "trail_f0": { "state": 0.84 }, "trail_f1": { "state": 0.42 }, "trail_f2": { "state": 0.05 }, "trail_f3": { "state": 0 },
     "row": { "state": 0 },
+    "ch_open": { "state": 0 }, "ch_n": { "state": 2 }, "ch_cursor": { "state": 0 }, "ch_bar": { "state": "#428AFF" },
+    "ch_t0": { "state": "" }, "ch_t1": { "state": "" }, "ch_t2": { "state": "" }, "ch_t3": { "state": "" },
+    "ch_t4": { "state": "" }, "ch_t5": { "state": "" }, "ch_t6": { "state": "" }, "ch_t7": { "state": "" },
+    "ch_f0": { "state": "white" }, "ch_f1": { "state": "white" }, "ch_f2": { "state": "white" }, "ch_f3": { "state": "white" },
+    "ch_f4": { "state": "white" }, "ch_f5": { "state": "white" }, "ch_f6": { "state": "white" }, "ch_f7": { "state": "white" },
     "v0": { "state": 1 }, "v1": { "state": 0 }, "v2": { "state": 1 },
     "v3": { "state": 1 }, "v4": { "state": 0 }, "v5": { "state": 0 },
     "busy": { "state": 0 },
@@ -143,7 +148,7 @@
           { "type": "rect", "rect": [0, 0, 1240, 1080], "bg": "#000000", "opacity": "screen == 'select' ? 1 : black" },
           { "type": "rect", "rect": [0, 0, 1240, 1080], "bg": "#FFFFFF", "opacity": "white" },
           // Each colour, with its Orpheus inside it: flat in the portrait's unselected shade (its design is for
-          // later), on their protagonist's side, trailing three copies outward as the portraits on the game's
+          // later), on their protagonist's side, trailing copies outward as the portraits on the game's
           // screen do. Only what their colour covers shows, so each is revealed as it floods.
           { "type": "group", "rect": [0, 0, "flood_blue", 1080], "clip": true, "visible": "screen == 'select'", "children": [
             { "type": "rect", "rect": [0, 0, 1240, 1080], "bg": "sel_him" },
@@ -160,6 +165,22 @@
           // Taps: his half and hers (hover, then choose).
           { "type": "rect", "rect": [0, 0, 620, 1080], "visible": "screen == 'select'", "on_tap": { "call": "tap_pick", "args": [0] } },
           { "type": "rect", "rect": [620, 0, 620, 1080], "visible": "screen == 'select'", "on_tap": { "call": "tap_pick", "args": [1] } },
+        ] },
+        // ---- A choice in a conversation (Yes/No and the like), here instead of on the game's screen: its box at
+        // the game's size (4x), in the game's colours and font, growing up from its bottom edge as the game's
+        // does. Tapping an option moves the cursor to it; tapping the one it's on chooses it.
+        { "type": "group", "rect": [76, "540 + (60 + 84 * ch_n) / 2 - (40 + (20 + 84 * ch_n) * ch_open)", 1088, "40 + (20 + 84 * ch_n) * ch_open"],
+          "visible": "ch_open > 0", "children": [
+          { "type": "rect", "rect": [0, 8, 1088, "40 + (20 + 84 * ch_n) * ch_open"], "bg": "#48000000", "radius": 16 },
+          { "type": "rect", "rect": [0, 0, 1088, "40 + (20 + 84 * ch_n) * ch_open"], "bg": "#C7D0C9", "radius": 16 },
+          { "type": "rect", "rect": [20, 20, 1024, "(20 + 84 * ch_n) * ch_open - 8"], "bg": "#CCD4CE", "radius": 10, "visible": "ch_open > 0.3" },
+          { "type": "group", "rect": [0, 0, 1088, "60 + 84 * ch_n"], "visible": "ch_open >= 1", "children": [
+            { "type": "rect", "rect": [32, "32 + 84 * ch_cursor", 1000, 80], "bg": "ch_bar", "radius": 6 },
+            // The game's font (gungnir/tools/p3p_font.py), its letters' ink 61 px in and 23 px below the bar's top.
+            { "type": "label", "repeat": "8", "visible": "{i} < ch_n", "rect": [61, "25 + 84 * {i}", 970, 104], "text": "{ch_t{i}}",
+              "font": "assets/game/font_msg_{ch_f{i}}.json", "size": 104 },
+            { "type": "rect", "repeat": "8", "visible": "{i} < ch_n", "rect": [0, "28 + 84 * {i}", 1088, 84], "on_tap": { "call": "tap_choice", "args": ["{i}"] } },
+          ] },
         ] },
       ],
     },

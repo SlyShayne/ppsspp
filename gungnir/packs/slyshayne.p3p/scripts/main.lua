@@ -172,8 +172,112 @@ local function portraits(s)
     publish("male_dx", female and 0 or -SLIDE * (1 - p))
 end
 
+-- Choices in conversations (Yes/No and the like): this screen draws the box, the game's doesn't. Each
+-- message window is in a list (WIN_LIST + 0xC: the first node; a node's +0x4 the next, +0xC its window).
+-- A window's first word is its state: bits 0xC00 are 0x800 while it's asking, and its +0x40 then holds
+-- the options' text, laid out as runs of glyphs (a run's +0x8 its line's y, +0x18 its glyph count, +0x1C
+-- its first glyph, +0x24 the next run; a glyph's +0x0 its letter, +0x10 its colour as RRGGBBAA, +0x28
+-- the next glyph). +0x48 (u16) is how many options there are and +0x4A, +0x4C the cursor.
+local WIN_LIST     = 0x08C3E73C
+local WIN_ASKING   = 0x800
+local CHOICE_MAX   = 8
+local CHOICE_OPEN  = 8           -- frames the box takes to grow open, as the game's does
+local FEMALE_FLAGS = 0x08E68498  -- bit 7: the female protagonist (game flag 0x1007), who has pink highlights
+-- The game's code that draws a choice, in the window code at 0x0898B0F4 and the window loop at 0x08985510
+-- (US 1.00): each is checked to be the instruction expected before it's replaced, so another version is
+-- left alone.
+local CHOICE_PATCHES = {
+    { 0x0898BB5C, 0x0E2625CF, 0x00000000 },  -- jal 0x0898973C, queueing the box: nothing
+    { 0x0898BBA0, 0x0E26260A, 0x00000000 },  -- jal 0x08989828, queueing the highlight bar: nothing
+    -- jal 0x0897E33C, drawing the options' text (more than 0 once all of it is in): li v0, 1, so the
+    -- game takes it as shown at once and goes on to take input as before.
+    { 0x08985698, 0x0E25F8CF, 0x24020001 },
+}
+
+local choiceWindow = nil  -- the window asking, if one is
+local choiceSince = nil   -- the frame its box started opening here
+
+local function ram(a)
+    return a >= 0x08800000 and a < 0x0A000000
+end
+
+local function patchChoices()
+    for _, p in ipairs(CHOICE_PATCHES) do
+        if mem.u32(p[1]) == p[2] then mem.write32(p[1], p[3]) end
+    end
+end
+
+local function askingWindow()
+    local node = mem.u32(WIN_LIST + 0xC)
+    for _ = 1, 32 do  -- 11 seen
+        if not ram(node) then return nil end
+        local w = mem.u32(node + 0xC)
+        if ram(w) and (mem.u32(w) & 0xC00) == WIN_ASKING and ram(mem.u32(w + 0x40)) then return w end
+        node = mem.u32(node + 0x4)
+    end
+    return nil
+end
+
+-- The options, top to bottom: { text, colour } each, from the glyphs the game laid out.
+local function options(w)
+    local runs = {}
+    local run = mem.u32(w + 0x40)
+    for _ = 1, 4 * CHOICE_MAX do
+        if not ram(run) then break end
+        local y = mem.u32(run + 0x8)
+        local line = runs[y]
+        if not line then
+            line = { y = y, text = "", colour = nil }
+            runs[y] = line
+            runs[#runs + 1] = line
+        end
+        local glyph = mem.u32(run + 0x1C)
+        for _ = 1, math.min(mem.u32(run + 0x18), 64) do
+            if not ram(glyph) then break end
+            local c = mem.u16(glyph)
+            if c >= 0x20 and c < 0x7F then line.text = line.text .. string.char(c) end
+            line.colour = line.colour or (mem.u32(glyph + 0x10) >> 8)
+            glyph = mem.u32(glyph + 0x28)
+        end
+        run = mem.u32(run + 0x24)
+    end
+    table.sort(runs, function(a, b) return a.y < b.y end)
+    return runs
+end
+
+local function choice()
+    local w = askingWindow()
+    choiceWindow = w
+    if not w then
+        choiceSince = nil
+        publish("ch_open", 0)
+        return
+    end
+    choiceSince = choiceSince or frame
+    local n = math.min(mem.u16(w + 0x48), CHOICE_MAX)
+    local cursor = mem.u16(w + 0x4A)
+    local female = (mem.u32(FEMALE_FLAGS) >> 7) & 1 == 1
+    local lines = options(w)
+    publish("ch_open", ramp(frame - choiceSince, { 0, CHOICE_OPEN }))
+    publish("ch_n", n)
+    publish("ch_cursor", cursor)
+    publish("ch_bar", female and "#EC447F" or "#428AFF")
+    for i = 0, CHOICE_MAX - 1 do
+        local line = lines[i + 1]
+        publish("ch_t" .. i, line and (line.text:gsub("%s+$", "")) or "")
+        -- Each colour is a font of its own (see gungnir/tools/p3p_font.py): white under the cursor, otherwise
+        -- the colour the game gave the option, his blue or her pink.
+        local colour = line and line.colour and line.colour & 0xFFFFFF
+        local font = "white"
+        if i ~= cursor then font = (colour == 0xEC447F or (colour == nil and female)) and "her" or "him" end
+        publish("ch_f" .. i, font)
+    end
+end
+
 function update(info)
     frame = info.frame
+    patchChoices()
+    choice()
     local phase = mem.u32(TITLE_PHASE)
     local s = screenFor(phase)
     -- Between the title going and the select's object coming (about 8 frames), stay black.
@@ -185,7 +289,8 @@ function update(info)
     -- it's made, before its first frame is drawn.
     local cfg = phase >= 10 and phase < 32 and configObject()
     if cfg then
-        mem.write32(CFG_ALPHA, 0)    end
+        mem.write32(CFG_ALPHA, 0)
+    end
     if s == "fade" and screen ~= "fade" then fadeStart = frame end
     if s == "idle" then fadeStart = nil end
     screen = s
@@ -287,6 +392,21 @@ end
 
 -- The protagonist select (while the choice is up): tap the one not hovered to hover them, the hovered
 -- one to choose them. Pressed as the player would, so the game's own switch plays.
+-- A choice's option: the cursor goes straight to it; tapping the one it's on chooses it.
+function tap_choice(i)
+    i = tonumber(i)
+    local w = choiceWindow
+    if not w or w ~= askingWindow() or i >= mem.u16(w + 0x48) or not begin() then return false end
+    if mem.u16(w + 0x4A) == i then
+        input.press("cross", HOLD)
+        finish(HOLD)
+    else
+        mem.write16(w + 0x4A, i)
+        mem.write16(w + 0x4C, i)
+        finish(0)
+    end
+end
+
 function tap_pick(side)
     side = tonumber(side)
     if screen ~= "select" or mem.u32(SEL_STATE) ~= 5 or not begin() then return false end

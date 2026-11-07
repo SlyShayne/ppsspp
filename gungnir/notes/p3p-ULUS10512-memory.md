@@ -94,6 +94,32 @@ Orpheus art: `data/camp/persona/pst_001.tmx` (his) and `pst_0AE.tmx` (hers) in `
 (a CRI CPK, CRILAYLA-compressed entries): 256x256 TMX0, 8-bit with a PS2-swizzled 256-colour CLUT and
 alpha 0..0x80. `pst_0A9` is a third recolour.
 
+## Conversations and choices (message windows)
+
+Found with the WebSocket debugger on the emulator (log-only memory breakpoints, backtraces from pausing
+ones). Static data, the same in every scene.
+
+| Address | What |
+|---|---|
+| `0x08C3E73C` + 0xC | The first of a list of message windows (11 at the protagonist select). A node's +0x4 is the next, +0xC its window. Windows are 0x130 apart from `0x08EED4F0`; the conversation's was `0x08EEDFA0` |
+| window + 0x0 | State. Bits 0–2: 3 or more while its text draws. Bits 3–5: the options' text, 0x18 appearing, 0x20 shown. Bits 10–11: 0x800 while it's asking a question (set once when the choice opens; the choice's input runs on it, so clearing it freezes the cursor) |
+| window + 0x4 | The scene's message file (`MSG1`, Atlus BMD: a table of type/pointer pairs, type 1 a choice such as `msg_YN`) |
+| window + 0x1C | The message being shown |
+| window + 0x20, + 0x40 | The conversation text's and the options' layout: runs of glyphs. A run's +0x8 is its line's y (options sort by it), +0x18 its glyph count, +0x1C its first glyph, +0x24 the next run. A glyph's +0x0 (u16) is its letter (ASCII; `0x83F6` trails), +0x10 its colour as RRGGBBAA, +0x28 the next glyph |
+| window + 0x48 (u16) | How many options |
+| window + 0x4A, + 0x4C (u16) | The cursor. Writing both moves it; the highlight follows |
+| `0x08E68298` | Game flags: flag n is bit n & 31 of the word at + (n >> 5) * 4 (`0x0880C150`). Flag `0x1007` (bit 7 of `0x08E68498`) is the female protagonist |
+
+How a choice is drawn: the window loop at `0x08985510` draws the conversation (`0x0897E34C`) and the
+options' text (`jal 0x0897E33C` at `0x08985698`, a1 = 1, more than 0 once all of it is in; that moves
+bits 3–5 from 0x18 to 0x20). The box and the highlight bar are queued from the window code around
+`0x0898BB5C` (`jal 0x0898973C`, the box at alpha 0xFF) and `0x0898BBA0` (`jal 0x08989828`, the bar:
+`#EC447F` with the female protagonist, else `#428AFF`; unselected options' text `#1058CD` for him).
+Replacing those two with `nop` and the text call with `li v0, 1` leaves the conversation as it was (dimmed
+behind the question) and the choice working with nothing of it drawn. The box: 272 x (14 + 21 per
+option) PSP px at (13, 144) for two options, rim `#C7D0C9`, inner `#CDD5CF`, the bar 250 x 20 from 8 px
+in, an 8 px shadow below; it grows up from its bottom edge over about 8 frames as it opens.
+
 ## Draw lists (not state)
 
 `0x08D60000`–`0x08D80000` and its double buffer `0x08DB0000`–`0x08DD0000` hold the game's per-frame
