@@ -792,10 +792,11 @@ extern "C" void Java_org_ppsspp_ppsspp_NativeApp_init
 	// TODO: We should be able to do the Vulkan init in parallel with NativeInit.
 	NativeInit((int)args.size(), &args[0], cmdLineOptions, user_data_path.c_str(), externalStorageDir.c_str(), cacheDir.c_str());
 
-	// The companion screen. Packs go in the memory stick's PSP/GUNGNIR, or here when that isn't a plain folder.
+	// The companion screen. The player drops packs in the memory stick's PSP/GUNGNIR/packs; they're
+	// installed here, an app folder Core can open with plain file calls.
 	GungnirHost_Init((!g_extFilesDir.empty() ? g_extFilesDir + "/" : user_data_path) + "gungnir",
 		[](const char *command, const char *param) { PushCommand(command, param); });
-	INFO_LOG(Log::System, "Gungnir packs folder: %s/packs", GungnirHost_PacksRoot().c_str());
+	INFO_LOG(Log::System, "Gungnir: packs from %s, installed in %s", GungnirHost_DropFolder().c_str(), GungnirHost_PacksRoot().c_str());
 
 	bFirstResume = true;
 

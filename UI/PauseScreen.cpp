@@ -75,6 +75,10 @@
 #include "UI/MiscViews.h"
 #include "UI/AdhocServerScreen.h"
 
+#if PPSSPP_PLATFORM(ANDROID)
+#include "android/jni/GungnirHost.h"
+#endif
+
 // This is in an objective-C file.
 #if PPSSPP_PLATFORM(IOS)
 void copyDeepLinkForPath(std::string_view filePath);
@@ -783,6 +787,47 @@ void GamePauseScreen::CreateViews() {
 	mainGroup->Add(new Choice(gr->T("Display layout & effects"), ImageID("I_DISPLAY")))->OnClick.Add([this](UI::EventParams &) -> void {
 		screenManager()->push(new DisplayLayoutScreen(gamePath_));
 	});
+#if PPSSPP_PLATFORM(ANDROID)
+	// Gungnir: which companion pack draws the second screen for this game (android/jni/GungnirHost.h).
+	if (GungnirHost_HasGame()) {
+		std::string current(pa->T("None"));
+		const std::string running = GungnirHost_RunningPack();
+		for (const auto &pack : GungnirHost_PacksForGame()) {
+			if (pack.folder == running) {
+				current = pack.name;
+			}
+		}
+		Choice *companion = mainGroup->Add(new Choice(ApplySafeSubstitutions(pa->T("Companion pack: %1"), current), ImageID("I_DISPLAY")));
+		companion->OnClick.Add([this](UI::EventParams &e) {
+			auto pa = GetI18NCategory(I18NCat::PAUSE);
+			// Picks up packs dropped on the memory stick since the game started.
+			const std::vector<GungnirPackEntry> packs = GungnirHost_RefreshPacksForGame();
+			const std::string choice = GungnirHost_Choice();
+			std::vector<std::string> items = { std::string(pa->T("Automatic")), std::string(pa->T("None")) };
+			int selected = choice == GUNGNIR_CHOICE_NONE ? 1 : 0;
+			for (size_t i = 0; i < packs.size(); i++) {
+				items.push_back(packs[i].name);
+				if (packs[i].folder == choice) {
+					selected = (int)i + 2;
+				}
+			}
+			ListPopupScreen *popup = new ListPopupScreen(pa->T("Companion pack"), items, selected, [this, packs](int index) {
+				if (index == 0) {
+					GungnirHost_SetChoice(GUNGNIR_CHOICE_AUTO);
+				} else if (index == 1) {
+					GungnirHost_SetChoice(GUNGNIR_CHOICE_NONE);
+				} else if (index - 2 < (int)packs.size()) {
+					GungnirHost_SetChoice(packs[index - 2].folder);
+				}
+				RecreateViews();
+			});
+			if (e.v) {
+				popup->SetPopupOrigin(e.v);
+			}
+			screenManager()->push(popup);
+		});
+	}
+#endif
 	if (g_Config.bShowTouchControls) {
 		mainGroup->Add(new Choice(co->T("Edit touch control layout"), ImageID("I_CONTROLLER")))->OnClick.Add([this](UI::EventParams &) -> void {
 			screenManager()->push(new TouchControlLayoutScreen(gamePath_));
