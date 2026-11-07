@@ -19,6 +19,8 @@ checked across a full restart.
 | `0x093BAF4C` | ? | 0 on PRESS ANY BUTTON, 0x10 on the menu |
 | `0x093BAF58` | Menu cursor | 0 NEW GAME, 1 LOAD GAME, 2 CONFIG, 3 DATA INSTALL (wraps) |
 | `0x093BAF5C` | Previous cursor | |
+| `0x093BAF60` | Menu highlight position | 16.16 fixed point, the row it's at; eases halfway to the cursor each game frame, whether the cursor was moved or written |
+| `0x093BAF68` | Float: the menu's opacity | 1.0 on the menu, eases to 0 as Config opens |
 | `0x093BAF64` | Float: PRESS ANY BUTTON ↔ menu crossfade | 0.0 on PRESS ANY BUTTON, 1.0 on the menu. Forcing 0.0 each frame: the menu nearly vanishes but PRESS ANY BUTTON comes back, and the game steps it toward 1.0 before drawing |
 | `0x08D4BBCE` (u8) | ? | 0 before the menu, 1 on it |
 
@@ -39,6 +41,8 @@ The background is vertex colours, not a texture: radial from the top-right corne
 | `0x093C1C90` | Previous row | |
 | `0x093C1CA4` … `0x093C1CB8` | The six options, one word each in row order | 1 ON, 0 OFF |
 | `0x093C1CBC` … `0x093C1CD0` | Which side of each switch is lit | 1 − the option |
+| `0x093C1C5C` | The Config object's pointer to itself (the object is at `0x093C1C40`) | set when it's made |
+| `0x093C1C60` | Config's opacity | 0xFF00 while it shows. Writing 0 each frame hides all of it (flat panels, sprites, text) and leaves the title behind; input still works |
 
 Right sets OFF and Left sets ON (no wrap). With Voices OFF, Auto Text shows NONE (its value is
 kept). Circle backs out; Confirm (row 6, Cross) applies. Each row has a help line under the list.

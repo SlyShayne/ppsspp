@@ -9,6 +9,9 @@ local TITLE_CROSSFADE = 0x093BAF64  -- float: 0 PRESS ANY BUTTON, 1 the menu, ea
 local CFG_CURSOR  = 0x093C1C8C  -- 0..6, Confirm last
 local CFG_VALUES  = 0x093C1CA4  -- six words, 1 ON
 local CFG_SIDES   = 0x093C1CBC  -- six words, 1 - the value
+local CFG_ALPHA   = 0x093C1C60  -- 0xFF00 while Config shows: its opacity, all of it
+local CFG_SELF    = 0x093C1C5C  -- Config's object, at 0x093C1C40, points to itself here
+local MENU_PILL   = 0x093BAF60  -- 16.16: the menu highlight's row, eased halfway to the cursor a game frame
 
 local BREATH_CLOCK = 0x093BAF3C -- counts half a unit a frame, wraps at 540 (18 s): the background's breathing
 
@@ -99,6 +102,12 @@ function update(info)
     frame = info.frame
     local phase = mem.u32(TITLE_PHASE)
     local s = screenFor(phase)
+    -- Config is on this screen instead: zero its opacity on the game's, each frame, which hides all of it
+    -- and leaves the title behind (its taps and buttons work as before).
+    -- The object's pointer to itself is there from when it's made, before its first frame is drawn.
+    if s == "config" or (phase >= 10 and phase < 32 and mem.u32(CFG_SELF) == CFG_SELF - 0x1C) then
+        mem.write32(CFG_ALPHA, 0)
+    end
     if s == "fade" and screen ~= "fade" then fadeStart = frame end
     if s == "idle" then fadeStart = nil end
     screen = s
@@ -114,6 +123,8 @@ function update(info)
         portraits(s)
         local cursor = mem.u32(MENU_CURSOR)
         publish("cursor", cursor < MENU_ITEMS and cursor or 1)
+        local pill = mem.u32(MENU_PILL) / 65536
+        publish("pill", (pill >= 0 and pill <= MENU_ITEMS - 1) and pill or 1)
     end
     if s == "config" then
         local row = mem.u32(CFG_CURSOR)

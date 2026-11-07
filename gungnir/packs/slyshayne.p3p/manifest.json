@@ -1,8 +1,9 @@
 // Persona 3 Portable (USA): the title screen and Config, on the second screen, following the game.
 // - Black while the game loads, then the title's own art, fading in and breathing as the game's does.
 // - PRESS ANY BUTTON: tap anywhere.
-// - The menu: NEW GAME, LOAD GAME, CONFIG, DATA INSTALL, lit as the game's cursor is; tap one to choose it.
+// - The menu: NEW GAME, LOAD GAME, CONFIG, DATA INSTALL, the highlight sliding as the game's does; tap one.
 // - Config: every row with its switch and help line; tap ON or OFF to switch, OK to confirm, Back to leave.
+// The game's own menu, highlight and Config are hidden on its screen while this pack runs.
 // Taps snap the game's cursor and press its button (scripts/main.lua). The title art is the game's,
 // as is Config's, built from your own dump with gungnir/tools/p3p_assets.py.
 {
@@ -12,7 +13,7 @@
     "screen": { "state": "idle" },
     "fade_art": { "state": 1 }, "fade_bg": { "state": 1 }, "fade_text": { "state": 1 }, "breath": { "state": 1 },
     "female_op": { "state": 1 }, "male_op": { "state": 0 }, "female_dx": { "state": 0 }, "male_dx": { "state": 0 },
-    "cursor": { "state": 1 },
+    "cursor": { "state": 1 }, "pill": { "state": 1 },
     "row": { "state": 0 },
     "v0": { "state": 1 }, "v1": { "state": 0 }, "v2": { "state": 1 },
     "v3": { "state": 1 }, "v4": { "state": 0 }, "v5": { "state": 0 },
@@ -44,17 +45,22 @@
           { "type": "rect", "rect": [0, 0, 1240, 1080], "visible": "screen == 'pab'", "on_tap": { "call": "tap_any" } },
           { "type": "image", "rect": [576, 872, 604, 36], "src": "assets/game/text_pab.png", "fill": "stretch", "visible": "screen != 'menu'", "opacity": "fade_text" },
 
-          // The menu: the game's pill behind the item its cursor is on, that item's text dark.
+          // The menu: the items in white; the game's pill slides to the chosen one as the game's does
+          // (following its eased position), and the text it covers is dark.
           { "type": "group", "rect": [0, 0, 1240, 1080], "visible": "screen == 'menu'", "children": [
-            { "type": "group", "rect": [644, "784 + 52 * cursor", 476, 48], "children": [
+            { "type": "image", "rect": [720, 792, 328, 32], "src": "assets/game/text_new.png", "fill": "stretch", "tint": "#F4F4F4" },
+            { "type": "image", "rect": [700, 844, 360, 32], "src": "assets/game/text_load.png", "fill": "stretch", "tint": "#F4F4F4" },
+            { "type": "image", "rect": [760, 894, 236, 36], "src": "assets/game/text_config.png", "fill": "stretch", "tint": "#F4F4F4" },
+            { "type": "image", "rect": [692, 946, 380, 36], "src": "assets/game/text_install.png", "fill": "stretch", "tint": "#F4F4F4" },
+            { "type": "group", "rect": [644, "784 + 52 * pill", 476, 48], "clip": true, "children": [
               { "type": "image", "rect": [0, 0, 40, 48], "src": "assets/game/pill_left.png", "fill": "stretch" },
               { "type": "rect", "rect": [40, 0, 396, 48], "bg": "#FEFEFE" },
               { "type": "image", "rect": [436, 0, 40, 48], "src": "assets/game/pill_right.png", "fill": "stretch" },
+              { "type": "image", "rect": [76, "8 - 52 * pill", 328, 32], "src": "assets/game/text_new.png", "fill": "stretch", "tint": "#0F0F30" },
+              { "type": "image", "rect": [56, "60 - 52 * pill", 360, 32], "src": "assets/game/text_load.png", "fill": "stretch", "tint": "#0F0F30" },
+              { "type": "image", "rect": [116, "110 - 52 * pill", 236, 36], "src": "assets/game/text_config.png", "fill": "stretch", "tint": "#0F0F30" },
+              { "type": "image", "rect": [48, "162 - 52 * pill", 380, 36], "src": "assets/game/text_install.png", "fill": "stretch", "tint": "#0F0F30" },
             ] },
-            { "type": "image", "rect": [720, 792, 328, 32], "src": "assets/game/text_new.png", "fill": "stretch", "tint": "cursor == 0 ? '#0F0F30' : '#F4F4F4'" },
-            { "type": "image", "rect": [700, 844, 360, 32], "src": "assets/game/text_load.png", "fill": "stretch", "tint": "cursor == 1 ? '#0F0F30' : '#F4F4F4'" },
-            { "type": "image", "rect": [760, 894, 236, 36], "src": "assets/game/text_config.png", "fill": "stretch", "tint": "cursor == 2 ? '#0F0F30' : '#F4F4F4'" },
-            { "type": "image", "rect": [692, 946, 380, 36], "src": "assets/game/text_install.png", "fill": "stretch", "tint": "cursor == 3 ? '#0F0F30' : '#F4F4F4'" },
             // Taps: each item's whole row, wider than its pill.
             { "type": "rect", "rect": [560, 778, 680, 52], "on_tap": { "call": "tap_menu", "args": [0] } },
             { "type": "rect", "rect": [560, 830, 680, 52], "on_tap": { "call": "tap_menu", "args": [1] } },
