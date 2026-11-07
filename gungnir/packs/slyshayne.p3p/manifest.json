@@ -15,7 +15,7 @@
     "female_op": { "state": 1 }, "male_op": { "state": 0 }, "female_dx": { "state": 0 }, "male_dx": { "state": 0 },
     "cursor": { "state": 1 }, "pill": { "state": 1 }, "menu_op": { "state": 1 },
     "cfg_panel": { "state": 1 }, "cfg_rows": { "state": 1 },
-    "white": { "state": 0 }, "flood_blue": { "state": 0 }, "flood_pink": { "state": 0 },
+    "black": { "state": 0 }, "white": { "state": 0 }, "flood_blue": { "state": 0 }, "flood_pink": { "state": 0 }, "orpheus_him": { "state": 0 }, "orpheus_her": { "state": 0 },
     "row": { "state": 0 },
     "v0": { "state": 1 }, "v1": { "state": 0 }, "v2": { "state": 1 },
     "v3": { "state": 1 }, "v4": { "state": 0 }, "v5": { "state": 0 },
@@ -28,6 +28,8 @@
     "cfg_yellow": "#FFC347",
     "sel_him": "#509BF9",
     "sel_her": "#FB8BDE",
+    "sel_him_dark": "#1E83FE",
+    "sel_her_dark": "#F961D2",
   },
   "start": "home",
   "pages": {
@@ -133,12 +135,21 @@
           { "type": "rect", "rect": [1030, 1004, 210, 76], "on_tap": { "call": "tap_back" } },
         ] },
 
-        // ---- NEW GAME: white as the title goes black, through the dialogue; then at the protagonist
+        // ---- NEW GAME: black as the title fades out, then white as the game fades back in; then at the protagonist
         // select, the hovered one's colour floods over from their side (him blue, her pink).
         { "type": "group", "rect": [0, 0, 1240, 1080], "visible": "screen == 'newgame' || screen == 'select'", "children": [
-          { "type": "rect", "rect": [0, 0, 1240, 1080], "bg": "#FFFFFF", "opacity": "screen == 'select' ? 1 : white" },
+          { "type": "rect", "rect": [0, 0, 1240, 1080], "bg": "#000000", "opacity": "screen == 'select' ? 1 : black" },
+          { "type": "rect", "rect": [0, 0, 1240, 1080], "bg": "#FFFFFF", "opacity": "white" },
           { "type": "rect", "rect": [0, 0, "flood_blue", 1080], "bg": "sel_him", "visible": "screen == 'select'" },
           { "type": "rect", "rect": ["1240 - flood_pink", 0, "flood_pink", 1080], "bg": "sel_her", "visible": "screen == 'select'" },
+          // The hovered one's Orpheus, flat in their portrait's unselected shade (its design is for later).
+          { "type": "image", "rect": [108, 56, 1024, 1024], "src": "assets/game/orpheus_male_flat.png", "fill": "stretch",
+            "tint": "sel_him_dark", "visible": "screen == 'select'", "opacity": "orpheus_him" },
+          { "type": "image", "rect": [108, 56, 1024, 1024], "src": "assets/game/orpheus_female_flat.png", "fill": "stretch",
+            "tint": "sel_her_dark", "visible": "screen == 'select'", "opacity": "orpheus_her" },
+          // Taps: his half and hers (hover, then choose).
+          { "type": "rect", "rect": [0, 0, 620, 1080], "visible": "screen == 'select'", "on_tap": { "call": "tap_pick", "args": [0] } },
+          { "type": "rect", "rect": [620, 0, 620, 1080], "visible": "screen == 'select'", "on_tap": { "call": "tap_pick", "args": [1] } },
         ] },
       ],
     },

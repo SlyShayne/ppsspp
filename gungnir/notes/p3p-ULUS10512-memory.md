@@ -79,7 +79,14 @@ it runs the "Welcome to the world of P3P" dialogue and then the choice.
 | `0x09363B14` (+0x44) | Float: the hover | 0 him, 1 her, eased (1 − cos) over 10 game frames as the cursor moves; also 1 → 0 as the choice appears |
 | `0x09363B18` (+0x48) | Float | 1.0 while he's hovered, 0 while she is (jumps) |
 
-The backgrounds are `#509BF9` (his, left) and `#FB8BDE` (hers, right).
+The backgrounds are `#509BF9` (his, left) and `#FB8BDE` (hers, right); the unselected portrait's
+silhouette is `#1E83FE` (his) or `#F961D2` (hers). State 2 holds black for its 30 game frames; the
+screen fades back in from about 42 to 108 frames (60 Hz) after state 2 starts. Choosing (Cross) takes
+the state to 6, "Begin the story as the ... main character?".
+
+Orpheus art: `data/camp/persona/pst_001.tmx` (his) and `pst_0AE.tmx` (hers) in `PSP_GAME/USRDIR/umd0.cpk`
+(a CRI CPK, CRILAYLA-compressed entries): 256x256 TMX0, 8-bit with a PS2-swizzled 256-colour CLUT and
+alpha 0..0x80. `pst_0A9` is a third recolour.
 
 ## Draw lists (not state)
 

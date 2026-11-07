@@ -22,11 +22,15 @@ local MENU_ALPHA  = 0x093BAF68  -- float: the menu's opacity, eased out as Confi
 -- The protagonist select after NEW GAME (its object, checked like Config's).
 local SEL_OBJECT  = 0x09363AD0
 local SEL_SIZE    = 0xC0
+local SEL_APPEAR  = SEL_OBJECT + 0x30  -- the choice's fade-in, 0 to 0xFF
 local SEL_STATE   = SEL_OBJECT + 0x34  -- 1, 2, 3 the dialogue, 4 the choice appearing (10 game frames), 5 choosing
 local SEL_CURSOR  = SEL_OBJECT + 0x38  -- 0 him, 1 her
 local SEL_HOVER   = SEL_OBJECT + 0x44  -- float: 0 him, 1 her, eased over 10 game frames as the cursor moves
 local WIDTH = 1240
-local WHITE_FADE = { 0, 34 }  -- frames: the bottom goes white as the title goes (phases 10, 11, 20 last ~36)
+-- After NEW GAME, frames: black as the title fades out (phases 10, 11, 20 last ~36); then white as the
+-- game's screen fades back in, measured from the select's state 2 (it holds black, then fades).
+local BLACK_FADE = { 0, 34 }
+local WHITE_FADE = { 42, 108 }
 
 local BREATH_CLOCK = 0x093BAF3C -- counts half a unit a frame, wraps at 540 (18 s): the background's breathing
 
@@ -71,7 +75,8 @@ local frame = 0          -- the last update's game frame
 local busyUntil = 0      -- a tap's presses run until this frame
 local screen = "idle"
 local fadeStart = nil
-local whiteStart = 0
+local blackStart = 0
+local whiteStart = nil
 
 local function float(address)
     local x = string.unpack("<f", string.pack("<I4", mem.u32(address)))
@@ -92,6 +97,10 @@ end
 -- (0 him, 1 her), which also brings him in as the choice first appears.
 local function select()
     local state = mem.u32(SEL_STATE)
+    -- Black, then white as the game's screen fades in from black (timed from state 2's start).
+    if state == 2 and not whiteStart then whiteStart = frame end
+    local white = whiteStart and ramp(frame - whiteStart, WHITE_FADE) or (state >= 3 and 1 or 0)
+    publish("white", white)
     local x = float(SEL_HOVER)
     local blue, pink = 0, 0
     if state == 4 then
@@ -101,6 +110,10 @@ local function select()
     end
     publish("flood_blue", blue)
     publish("flood_pink", pink)
+    -- The hovered one's Orpheus, a flat silhouette, in with the choice and crossfading with the hover.
+    local appear = state >= 5 and 1 or (state == 4 and (mem.u32(SEL_APPEAR) & 0xFF) / 255 or 0)
+    publish("orpheus_him", appear * (1 - x))
+    publish("orpheus_her", appear * x)
 end
 
 -- Config is up: its object is there and its data looks like itself (heap memory can hold leftovers).
@@ -154,9 +167,10 @@ function update(info)
     frame = info.frame
     local phase = mem.u32(TITLE_PHASE)
     local s = screenFor(phase)
-    -- Between the title going and the select's object coming (about 8 frames), stay white.
-    if s == "idle" and screen == "newgame" and frame - whiteStart < 120 then s = "newgame" end
-    if s == "newgame" and screen ~= "newgame" then whiteStart = frame end
+    -- Between the title going and the select's object coming (about 8 frames), stay black.
+    if s == "idle" and screen == "newgame" and frame - blackStart < 120 then s = "newgame" end
+    if s == "newgame" and screen ~= "newgame" then blackStart = frame end
+    if s ~= "select" then whiteStart = nil end
     -- Config is on this screen instead: zero its opacity on the game's, each frame, which hides all of it
     -- and leaves the title behind (its taps and buttons work as before). Its object is checked from when
     -- it's made, before its first frame is drawn.
@@ -175,7 +189,8 @@ function update(info)
     publish("breath", breath())
     publish("busy", frame < busyUntil and 1 or 0)
     if s == "newgame" then
-        publish("white", ramp(frame - whiteStart, WHITE_FADE))
+        publish("black", ramp(frame - blackStart, BLACK_FADE))
+        publish("white", 0)
     elseif s == "select" then
         select()
     end
@@ -258,5 +273,18 @@ end
 function tap_back()
     if screen ~= "config" or not begin() then return false end
     input.press("circle", 6)
+    finish(6)
+end
+
+-- The protagonist select (while the choice is up): tap the one not hovered to hover them, the hovered
+-- one to choose them. Pressed as the player would, so the game's own switch plays.
+function tap_pick(side)
+    side = tonumber(side)
+    if screen ~= "select" or mem.u32(SEL_STATE) ~= 5 or not begin() then return false end
+    if mem.u32(SEL_CURSOR) == side then
+        input.press("cross", 6)
+    else
+        input.press(side == 0 and "left" or "right", 6)
+    end
     finish(6)
 end

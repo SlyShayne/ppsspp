@@ -6,6 +6,9 @@ menu with both protagonists and Config), then:
 
     python -I gungnir/tools/p3p_assets.py <PSP/TEXTURES/ULUS10512/new> gungnir/packs/slyshayne.p3p/assets/game
 
+A third folder, optional, holds orpheus_male.png and orpheus_female.png decoded from the game's
+umd0.cpk (see orpheus() below) for the protagonist select's silhouettes.
+
 Needs Pillow. Texture names are PPSSPP's hashes for the US release (ULUS10512).
 """
 import os
@@ -147,7 +150,22 @@ def main(src, dst):
     print("wrote the art to", dst, "and title_text.png to", textures)
 
 
+def orpheus(src, dst):
+    """Orpheus, his and hers, as white silhouettes (the pack tints them flat, so the design stays hidden).
+    [src] holds orpheus_male.png and orpheus_female.png: the game's data/camp/persona/pst_001.tmx and
+    pst_0AE.tmx (in PSP_GAME/USRDIR/umd0.cpk), decoded to RGBA."""
+    for name in ("orpheus_male", "orpheus_female"):
+        image = Image.open(os.path.join(src, name + ".png")).convert("RGBA")
+        mask = image.getchannel("A").point(lambda a: 255 if a >= 8 else 0)  # its background isn't quite 0
+        flat = Image.new("RGBA", image.size, (255, 255, 255, 0))
+        flat.putalpha(mask)
+        flat.save(os.path.join(dst, name + "_flat.png"))
+    print("wrote the Orpheus silhouettes to", dst)
+
+
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
+    if len(sys.argv) not in (3, 4):
         sys.exit(__doc__)
     main(sys.argv[1], sys.argv[2])
+    if len(sys.argv) == 4:
+        orpheus(sys.argv[3], sys.argv[2])
