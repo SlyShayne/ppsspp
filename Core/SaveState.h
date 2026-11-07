@@ -145,6 +145,11 @@ namespace SaveState {
 	// Returns true if a savestate has been used during this session.
 	bool HasLoadedState();
 
+	// Called on the emu thread after every successful load or rewind, before the next frame runs.
+	// One listener at a time; nullptr removes it. Used by the Gungnir companion host.
+	typedef void (*LoadListener)();
+	void SetLoadListener(LoadListener listener);
+
 	// Returns true if the state has been reused instead of real saves many times.
 	bool IsStale();
 

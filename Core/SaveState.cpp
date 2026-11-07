@@ -95,6 +95,7 @@ static bool needsProcess = false;
 static bool needsRestart = false;
 static std::mutex mutex;
 static bool hasLoadedState = false;
+static LoadListener g_loadListener = nullptr;
 static const int STALE_STATE_USES = 2;
 // 4 hours of total gameplay since the virtual PSP started the game.
 static const u64 STALE_STATE_TIME = 4 * 3600 * 1000000ULL;
@@ -1141,6 +1142,18 @@ int g_screenshotFailures;
 		return hasLoadedState;
 	}
 
+	void SetLoadListener(LoadListener listener) {
+		g_loadListener = listener;
+	}
+
+	// Every successful load and rewind comes through here, on the emu thread, before the next frame.
+	static void OnStateLoaded() {
+		hasLoadedState = true;
+		if (g_loadListener) {
+			g_loadListener();
+		}
+	}
+
 	bool IsStale() {
 		if (saveStateGeneration >= STALE_STATE_USES) {
 			return CoreTiming::GetGlobalTimeUs() > STALE_STATE_TIME;
@@ -1459,7 +1472,7 @@ int g_screenshotFailures;
 			status = TriggerLoadWarnings(message);
 			metadata = SaveState::GetSaveFileDateAsString(op.path.GetFilename());
 
-			hasLoadedState = true;
+			OnStateLoaded();
 			Core_ResetException();
 
 			if (op.slot >= 0)
@@ -1513,7 +1526,7 @@ int g_screenshotFailures;
 		if (result == CChunkFileReader::ERROR_NONE) {
 			message = sc->T("Loaded State");
 			status = Status::SUCCESS;
-			hasLoadedState = true;
+			OnStateLoaded();
 			Core_ResetException();
 		} else if (result == CChunkFileReader::ERROR_BROKEN_STATE) {
 			// Cripes.  Good news is, we might have more.  Let's try those too, better than a reset.
@@ -1521,7 +1534,7 @@ int g_screenshotFailures;
 				// Well, we did rewind, even if too much...
 				message = sc->T("Loaded State");
 				status = Status::SUCCESS;
-				hasLoadedState = true;
+				OnStateLoaded();
 				Core_ResetException();
 			} else {
 				message = std::string(i18nLoadFailure) + " (" + errorString + ")";
