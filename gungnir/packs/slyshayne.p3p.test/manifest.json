@@ -26,14 +26,18 @@
         { "type": "label", "rect": [60, 130, 1120, 50], "text": "Gungnir companion test", "size": 36, "color": "#A0B4D8" },
 
         { "type": "label", "rect": [60, 240, 1120, 50], "text": "Frame {frame}  ({seconds} s)", "size": 40 },
-        { "type": "bar", "rect": [60, 305, 1120, 36], "bind": "frame % 60", "max": 60, "color": "#4FA3FF" },
+        { "type": "rect", "rect": [60, 305, 1120, 36], "bg": "#1E2A4A" },
+        { "type": "rect", "rect": [60, 305, 1120, 36], "bg": "#4FA3FF", "origin": [0, 0.5], "scale_x": "(frame % 60) / 59.0" },
         { "type": "label", "rect": [60, 370, 1120, 50], "text": "{=@paused ? 'PAUSED' : 'RUNNING'}", "size": 40,
           "color": "@paused ? '#F6D046' : '#3CD070'" },
         { "type": "label", "rect": [60, 450, 1120, 50], "text": "RAM 0x08804000: {ram_hex}", "size": 40 },
 
         { "type": "label", "rect": [60, 560, 1120, 50], "text": "Taps: {taps}", "size": 40 },
-        { "type": "button", "rect": [60, 640, 520, 160], "text": "Tap", "size": 48, "class": "panel", "on_tap": "tap" },
-        { "type": "button", "rect": [660, 640, 520, 160], "text": "Buzz", "size": 48, "class": "panel", "on_tap": "buzz" },
+        // Buttons are labels with on_tap: gungnir-core's std.button lives in a library the Gungnir app bundles.
+        { "type": "label", "rect": [60, 640, 520, 160], "text": "Tap", "size": 48, "class": "panel",
+          "align": "center", "text_align": "center", "on_tap": "tap" },
+        { "type": "label", "rect": [660, 640, 520, 160], "text": "Buzz", "size": 48, "class": "panel",
+          "align": "center", "text_align": "center", "on_tap": "buzz" },
       ],
     },
   },

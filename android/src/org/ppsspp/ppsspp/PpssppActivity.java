@@ -1015,9 +1015,10 @@ public class PpssppActivity extends AppCompatActivity implements SensorEventList
 		if (externalDisplayWatched && "1".equals(NativeApp.queryConfig("externalDisplayOutput"))) {
 			DisplayManager displayManager = (DisplayManager)getSystemService(Context.DISPLAY_SERVICE);
 			for (Display candidate : displayManager.getDisplays(DisplayManager.DISPLAY_CATEGORY_PRESENTATION)) {
-				// While a Gungnir pack runs, a screen that doesn't say it's an outside connection is the companion's:
-				// the AYN Thor's second screen reports no connection type at all, so it isn't "built in" either.
-				if (!isBuiltInDisplay(candidate) && !(gungnirCompanionWanted && !isExternalConnection(candidate))) {
+				// Only a screen Android knows is plugged in from outside (a TV, a monitor, a dock) gets the game. A
+				// dual-screen handheld's own second screen is the companion's, and isn't always marked built in: the
+				// AYN Thor's reports no connection type at all, so "not built in" would send the game down there.
+				if (isExternalConnection(candidate)) {
 					display = candidate;
 					break;
 				}
