@@ -81,7 +81,13 @@ it runs the "Welcome to the world of P3P" dialogue and then the choice.
 
 The backgrounds are `#509BF9` (his, left) and `#FB8BDE` (hers, right); the unselected portrait's
 silhouette is `#1E83FE` (his) or `#F961D2` (hers). State 2 holds black for its 30 game frames; the
-screen fades back in from about 42 to 108 frames (60 Hz) after state 2 starts. Choosing (Cross) takes
+screen fades back in from about 42 to 108 frames (60 Hz) after state 2 starts.
+
+The hovered portrait trails four silhouette copies away from the middle (from a 30 fps recording): 20 PSP
+px apart, all moving out one spacing a second while a new one comes out from behind the portrait. A copy
+at d spacings out is flat, from about `#1579F4` (his) or `#F059C9` (hers) to the background, by
+smoothstep((d − 0.5) / 3.5), so the farthest is gone at 4. Their edges ripple; not found in memory (the
+select's object holds no timer for it). Choosing (Cross) takes
 the state to 6, "Begin the story as the ... main character?".
 
 Orpheus art: `data/camp/persona/pst_001.tmx` (his) and `pst_0AE.tmx` (hers) in `PSP_GAME/USRDIR/umd0.cpk`

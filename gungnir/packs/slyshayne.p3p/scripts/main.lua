@@ -30,6 +30,10 @@ local WIDTH = 1240
 -- game's screen fades back in, measured from the select's state 2 (it holds black, then fades).
 local BLACK_FADE = { 0, 34 }
 local WHITE_FADE = { 42, 108 }
+-- The portraits' trails on the game's screen (measured from a recording): four copies 20 PSP px apart,
+-- each moving out one spacing a second, its colour eased from a darker shade to the background's.
+local TRAIL_COPIES = 4
+local TRAIL_PERIOD = 60
 
 local BREATH_CLOCK = 0x093BAF3C -- counts half a unit a frame, wraps at 540 (18 s): the background's breathing
 
@@ -109,6 +113,16 @@ local function select()
     end
     publish("flood_blue", blue)
     publish("flood_pink", pink)
+    -- Each Orpheus's trail, like the portraits' on the game's screen: TRAIL_COPIES silhouettes drift away
+    -- one spacing every TRAIL_PERIOD frames, blending into the background as they go (gone by the last
+    -- spacing), while a new one comes out from behind. Copy i is drawn farthest first.
+    local t = (frame % TRAIL_PERIOD) / TRAIL_PERIOD
+    for i = 0, TRAIL_COPIES - 1 do
+        local d = (TRAIL_COPIES - 1 - i) + t
+        local f = math.min(1, math.max(0, (d - 0.5) / (TRAIL_COPIES - 0.5)))
+        publish("trail_d" .. i, d)
+        publish("trail_f" .. i, f * f * (3 - 2 * f))
+    end
 end
 
 -- Config is up: its object is there and its data looks like itself (heap memory can hold leftovers).

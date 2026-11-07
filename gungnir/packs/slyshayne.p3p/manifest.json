@@ -16,6 +16,8 @@
     "cursor": { "state": 1 }, "pill": { "state": 1 }, "menu_op": { "state": 1 },
     "cfg_panel": { "state": 1 }, "cfg_rows": { "state": 1 },
     "black": { "state": 0 }, "white": { "state": 0 }, "flood_blue": { "state": 0 }, "flood_pink": { "state": 0 },
+    "trail_d0": { "state": 3 }, "trail_d1": { "state": 2 }, "trail_d2": { "state": 1 }, "trail_d3": { "state": 0 },
+    "trail_f0": { "state": 0.84 }, "trail_f1": { "state": 0.42 }, "trail_f2": { "state": 0.05 }, "trail_f3": { "state": 0 },
     "row": { "state": 0 },
     "v0": { "state": 1 }, "v1": { "state": 0 }, "v2": { "state": 1 },
     "v3": { "state": 1 }, "v4": { "state": 0 }, "v5": { "state": 0 },
@@ -145,16 +147,14 @@
           // screen do. Only what their colour covers shows, so each is revealed as it floods.
           { "type": "group", "rect": [0, 0, "flood_blue", 1080], "clip": true, "visible": "screen == 'select'", "children": [
             { "type": "rect", "rect": [0, 0, 1240, 1080], "bg": "sel_him" },
-            { "type": "image", "rect": [-432, 56, 1024, 1024], "src": "assets/game/orpheus_male_flat.png", "fill": "stretch", "tint": "#4A97F8" },
-            { "type": "image", "rect": [-352, 56, 1024, 1024], "src": "assets/game/orpheus_male_flat.png", "fill": "stretch", "tint": "#378CF7" },
-            { "type": "image", "rect": [-272, 56, 1024, 1024], "src": "assets/game/orpheus_male_flat.png", "fill": "stretch", "tint": "#2281F5" },
+            { "type": "image", "repeat": "4", "rect": ["-192 - 80 * trail_d{i}", 56, 1024, 1024], "src": "assets/game/orpheus_male_flat.png", "fill": "stretch",
+              "tint": "mix('#1579F4', '#509BF9', trail_f{i})" },
             { "type": "image", "rect": [-192, 56, 1024, 1024], "src": "assets/game/orpheus_male_flat.png", "fill": "stretch", "tint": "sel_him_dark" },
           ] },
           { "type": "group", "rect": ["1240 - flood_pink", 0, "flood_pink", 1080], "clip": true, "visible": "screen == 'select'", "children": [
             { "type": "rect", "rect": ["flood_pink - 1240", 0, 1240, 1080], "bg": "sel_her" },
-            { "type": "image", "rect": ["flood_pink - 776", 56, 1024, 1024], "src": "assets/game/orpheus_female_flat.png", "fill": "stretch", "tint": "#F983DA" },
-            { "type": "image", "rect": ["flood_pink - 856", 56, 1024, 1024], "src": "assets/game/orpheus_female_flat.png", "fill": "stretch", "tint": "#F571D3" },
-            { "type": "image", "rect": ["flood_pink - 936", 56, 1024, 1024], "src": "assets/game/orpheus_female_flat.png", "fill": "stretch", "tint": "#F160CC" },
+            { "type": "image", "repeat": "4", "rect": ["flood_pink - 1016 + 80 * trail_d{i}", 56, 1024, 1024], "src": "assets/game/orpheus_female_flat.png", "fill": "stretch",
+              "tint": "mix('#F059C9', '#FB8BDE', trail_f{i})" },
             { "type": "image", "rect": ["flood_pink - 1016", 56, 1024, 1024], "src": "assets/game/orpheus_female_flat.png", "fill": "stretch", "tint": "sel_her_dark" },
           ] },
           // Taps: his half and hers (hover, then choose).
