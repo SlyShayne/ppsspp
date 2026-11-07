@@ -1015,7 +1015,9 @@ public class PpssppActivity extends AppCompatActivity implements SensorEventList
 		if (externalDisplayWatched && "1".equals(NativeApp.queryConfig("externalDisplayOutput"))) {
 			DisplayManager displayManager = (DisplayManager)getSystemService(Context.DISPLAY_SERVICE);
 			for (Display candidate : displayManager.getDisplays(DisplayManager.DISPLAY_CATEGORY_PRESENTATION)) {
-				if (!isBuiltInDisplay(candidate)) {
+				// While a Gungnir pack runs, a screen that doesn't say it's an outside connection is the companion's:
+				// the AYN Thor's second screen reports no connection type at all, so it isn't "built in" either.
+				if (!isBuiltInDisplay(candidate) && !(gungnirCompanionWanted && !isExternalConnection(candidate))) {
 					display = candidate;
 					break;
 				}
@@ -1052,6 +1054,20 @@ public class PpssppActivity extends AppCompatActivity implements SensorEventList
 		}
 		DeviceProductInfo info = display.getDeviceProductInfo();
 		return info != null && info.getConnectionToSinkType() == DeviceProductInfo.CONNECTION_TO_SINK_BUILT_IN;
+	}
+
+	// A display Android knows is plugged in from outside (HDMI, USB-C, a dock), directly or through something.
+	// Before Android 12 nothing can tell, and a screen that reports nothing (the Thor's second one) isn't either.
+	private static boolean isExternalConnection(Display display) {
+		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+			return false;
+		}
+		DeviceProductInfo info = display.getDeviceProductInfo();
+		if (info == null) {
+			return false;
+		}
+		int sink = info.getConnectionToSinkType();
+		return sink == DeviceProductInfo.CONNECTION_TO_SINK_DIRECT || sink == DeviceProductInfo.CONNECTION_TO_SINK_TRANSITIVE;
 	}
 
 	private void dismissExternalDisplay() {
@@ -2028,6 +2044,8 @@ public class PpssppActivity extends AppCompatActivity implements SensorEventList
 			return true;
 		} else if (command.equals("gungnir_companion")) {
 			gungnirCompanionWanted = params.equals("show");
+			// First: the game may have to give the second screen back (or may get it again).
+			updateExternalDisplay();
 			updateGungnirCompanion();
 			return true;
 		} else if (command.equals("gungnir_haptic")) {
