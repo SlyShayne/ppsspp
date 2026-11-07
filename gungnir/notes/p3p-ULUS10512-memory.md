@@ -75,13 +75,20 @@ it runs the "Welcome to the world of P3P" dialogue and then the choice.
 | `0x09363B00` (+0x30) | The choice's fade-in | 0 → 0xFF over its 10 game frames |
 | `0x09363B04` (+0x34) | State | 1, 2, 3 the dialogue, 4 the choice appearing, 5 choosing |
 | `0x09363B08` (+0x38) | Cursor | 0 the male protagonist, 1 the female |
-| `0x09363B0C`, `0x09363B10` | Floats: the two portraits' x offsets | animate as the cursor moves |
+| `0x09363B0C`, `0x09363B10` | Floats, him then her: how far forward (toward the middle) each portrait is, in PSP px | -10 each through the dialogue; as the choice appears he eases to 5, then 9.2 while hovered and -28.8 while not (she stays at -10 until first switched to) |
 | `0x09363B14` (+0x44) | Float: the hover | 0 him, 1 her, eased (1 − cos) over 10 game frames as the cursor moves; also 1 → 0 as the choice appears |
 | `0x09363B18` (+0x48) | Float | 1.0 while he's hovered, 0 while she is (jumps) |
 
 The backgrounds are `#509BF9` (his, left) and `#FB8BDE` (hers, right); the unselected portrait's
 silhouette is `#1E83FE` (his) or `#F961D2` (hers). State 2 holds black for its 30 game frames; the
 screen fades back in from about 42 to 108 frames (60 Hz) after state 2 starts.
+
+Through the dialogue both portraits are in colour, each trailing outward; each side's colour runs from its
+edge to behind its portrait, white between. From the choice on, the one not hovered is a flat silhouette in
+its shade with no trail. The flat colour wipes across a portrait from its middle-facing side out to its outer
+side as it goes flat, and back the other way as it comes into colour, on the hover: the one coming in over
+hover 0.5 of the way, then the one going out (so as the choice appears, with the hover going 1 to 0, she
+goes flat and he stays in colour).
 
 The hovered portrait trails four silhouette copies away from the middle (from a 30 fps recording): 20 PSP
 px apart, all moving out one spacing a second while a new one comes out from behind the portrait. A copy

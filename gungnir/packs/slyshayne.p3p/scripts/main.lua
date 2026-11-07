@@ -25,7 +25,10 @@ local SEL_SIZE    = 0xC0
 local SEL_STATE   = SEL_OBJECT + 0x34  -- 1, 2, 3 the dialogue, 4 the choice appearing (10 game frames), 5 choosing
 local SEL_CURSOR  = SEL_OBJECT + 0x38  -- 0 him, 1 her
 local SEL_HOVER   = SEL_OBJECT + 0x44  -- float: 0 him, 1 her, eased over 10 game frames as the cursor moves
-local WIDTH = 1240
+-- Floats, him then her: how far forward (toward the middle) each portrait is, in PSP px; about 9.3 while
+-- hovered and -29.3 while not, eased as the cursor moves.
+local SEL_OFFSETS = SEL_OBJECT + 0x3C
+local SCALE_X = 4  -- this screen's pixels per PSP pixel
 -- After NEW GAME, frames: black as the title fades out (phases 10, 11, 20 last ~36); then white as the
 -- game's screen fades back in, measured from the select's state 2 (it holds black, then fades).
 local BLACK_FADE = { 0, 34 }
@@ -95,24 +98,38 @@ local function selectObject()
     return mem.u32(SEL_OBJECT) == SEL_SIZE and mem.u32(SEL_OBJECT + 0x1C) == SEL_OBJECT
 end
 
--- The protagonist select: white through its dialogue; then the hovered protagonist's colour floods the
--- screen from their side (him from the left, her from the right), on the game's own eased hover
--- (0 him, 1 her), which also brings him in as the choice first appears.
+local function rawFloat(address)
+    local x = string.unpack("<f", string.pack("<I4", mem.u32(address)))
+    if x ~= x or x < -1000 or x > 1000 then return 0 end  -- not a number while it's set up
+    return x
+end
+
+-- The protagonist select, laid out as the game's screen: him (Orpheus-M here) on the left in blue, her
+-- (Orpheus-F) on the right in pink, white between. Through the dialogue both are in colour, trailing
+-- outward. From the choice on, the hovered one comes forward in colour, and the other goes back, flat in
+-- its colour, its trail drawn in. The flat colour wipes over a portrait from the middle out to its side, and
+-- off again the other way: on the game's eased hover (0 him, 1 her), the one coming in first, then the one
+-- going out.
 local function select()
     local state = mem.u32(SEL_STATE)
-    -- Black, then white as the game's screen fades in from black (timed from state 2's start).
+    -- Black, then the scene as the game's screen fades in from black (timed from state 2's start).
     if state == 2 and not whiteStart then whiteStart = frame end
     local white = whiteStart and ramp(frame - whiteStart, WHITE_FADE) or (state >= 3 and 1 or 0)
     publish("white", white)
     local x = float(SEL_HOVER)
-    local blue, pink = 0, 0
+    local himFlat, herFlat = 0, 0
     if state == 4 then
-        blue = (1 - x) * WIDTH
+        herFlat = 1 - math.min(1, 2 * x)  -- as the choice appears (x 1 to 0), she goes flat
     elseif state >= 5 then
-        blue, pink = (1 - x) * WIDTH, x * WIDTH
+        himFlat = math.max(0, 2 * x - 1)
+        herFlat = 1 - math.min(1, 2 * x)
     end
-    publish("flood_blue", blue)
-    publish("flood_pink", pink)
+    publish("him_flat", himFlat)
+    publish("her_flat", herFlat)
+    -- How far each is forward (toward the middle), at 4x: the game's own, eased as it moves them (-10 PSP px
+    -- each through the dialogue).
+    publish("him_dx", SCALE_X * rawFloat(SEL_OFFSETS))
+    publish("her_dx", SCALE_X * rawFloat(SEL_OFFSETS + 4))
     -- Each Orpheus's trail, like the portraits' on the game's screen: TRAIL_COPIES silhouettes drift away
     -- one spacing every TRAIL_PERIOD frames, blending into the background as they go (gone by the last
     -- spacing), while a new one comes out from behind. Copy i is drawn farthest first.

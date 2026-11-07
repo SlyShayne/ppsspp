@@ -15,7 +15,7 @@
     "female_op": { "state": 1 }, "male_op": { "state": 0 }, "female_dx": { "state": 0 }, "male_dx": { "state": 0 },
     "cursor": { "state": 1 }, "pill": { "state": 1 }, "menu_op": { "state": 1 },
     "cfg_panel": { "state": 1 }, "cfg_rows": { "state": 1 },
-    "black": { "state": 0 }, "white": { "state": 0 }, "flood_blue": { "state": 0 }, "flood_pink": { "state": 0 },
+    "black": { "state": 0 }, "white": { "state": 0 }, "him_flat": { "state": 0 }, "her_flat": { "state": 0 }, "him_dx": { "state": 0 }, "her_dx": { "state": 0 },
     "trail_d0": { "state": 3 }, "trail_d1": { "state": 2 }, "trail_d2": { "state": 1 }, "trail_d3": { "state": 0 },
     "trail_f0": { "state": 0.84 }, "trail_f1": { "state": 0.42 }, "trail_f2": { "state": 0.05 }, "trail_f3": { "state": 0 },
     "row": { "state": 0 },
@@ -142,25 +142,38 @@
           { "type": "rect", "rect": [1030, 1004, 210, 76], "on_tap": { "call": "tap_back" } },
         ] },
 
-        // ---- NEW GAME: black as the title fades out, then white as the game fades back in; then at the protagonist
-        // select, the hovered one's colour floods over from their side (him blue, her pink).
+        // ---- NEW GAME: black as the title fades out; then the protagonist select fades in from black as the game's
+        // does, laid out as its screen: Orpheus-M on the left in blue, Orpheus-F on the right in pink, white
+        // between. Each touches the top and bottom, its outer side off the screen, at 1:1 so its edges stay
+        // smooth (gungnir/tools/p3p_assets.py scales them). A trail of copies runs outward from each in colour;
+        // the one not hovered goes flat in its colour, from the middle out, its trail drawn in.
         { "type": "group", "rect": [0, 0, 1240, 1080], "visible": "screen == 'newgame' || screen == 'select'", "children": [
           { "type": "rect", "rect": [0, 0, 1240, 1080], "bg": "#000000", "opacity": "screen == 'select' ? 1 : black" },
-          { "type": "rect", "rect": [0, 0, 1240, 1080], "bg": "#FFFFFF", "opacity": "white" },
-          // Each colour, with its Orpheus inside it: flat in the portrait's unselected shade (its design is for
-          // later), on their protagonist's side, trailing copies outward as the portraits on the game's
-          // screen do. Only what their colour covers shows, so each is revealed as it floods.
-          { "type": "group", "rect": [0, 0, "flood_blue", 1080], "clip": true, "visible": "screen == 'select'", "children": [
-            { "type": "rect", "rect": [0, 0, 1240, 1080], "bg": "sel_him" },
-            { "type": "image", "repeat": "4", "rect": ["-192 - 80 * trail_d{i}", 56, 1024, 1024], "src": "assets/game/orpheus_male_flat.png", "fill": "stretch",
-              "tint": "mix('#1579F4', '#509BF9', trail_f{i})" },
-            { "type": "image", "rect": [-192, 56, 1024, 1024], "src": "assets/game/orpheus_male_flat.png", "fill": "stretch", "tint": "sel_him_dark" },
-          ] },
-          { "type": "group", "rect": ["1240 - flood_pink", 0, "flood_pink", 1080], "clip": true, "visible": "screen == 'select'", "children": [
-            { "type": "rect", "rect": ["flood_pink - 1240", 0, 1240, 1080], "bg": "sel_her" },
-            { "type": "image", "repeat": "4", "rect": ["flood_pink - 1016 + 80 * trail_d{i}", 56, 1024, 1024], "src": "assets/game/orpheus_female_flat.png", "fill": "stretch",
-              "tint": "mix('#F059C9', '#FB8BDE', trail_f{i})" },
-            { "type": "image", "rect": ["flood_pink - 1016", 56, 1024, 1024], "src": "assets/game/orpheus_female_flat.png", "fill": "stretch", "tint": "sel_her_dark" },
+          { "type": "group", "rect": [0, 0, 1240, 1080], "opacity": "white", "children": [
+            { "type": "rect", "rect": [0, 0, 1240, 1080], "bg": "#FFFFFF" },
+            { "type": "group", "rect": [0, 0, 1240, 1080], "visible": "screen == 'select'", "children": [
+              // Each colour from its edge to behind its Orpheus.
+              { "type": "rect", "rect": [0, 0, "230 + him_dx", 1080], "bg": "sel_him" },
+              { "type": "rect", "rect": ["1051 - her_dx", 0, "189 + her_dx", 1080], "bg": "sel_her" },
+              { "type": "group", "rect": ["-265 + him_dx", 0, 825, 1080], "children": [
+                { "type": "image", "repeat": "4", "visible": "him_flat < 1", "rect": ["-80 * trail_d{i} * (1 - him_flat)", 0, 825, 1080],
+                  "src": "assets/game/orpheus_male_flat.png", "fill": "stretch", "tint": "mix('#1579F4', '#509BF9', trail_f{i})" },
+                { "type": "image", "rect": [-6, -6, 837, 1092], "src": "assets/game/orpheus_male_edge.png", "fill": "stretch", "tint": "sel_him_dark" },
+                { "type": "image", "rect": [0, 0, 825, 1080], "src": "assets/game/orpheus_male_full.png", "fill": "stretch" },
+                { "type": "group", "rect": ["825 * (1 - him_flat)", 0, "825 * him_flat", 1080], "clip": true, "visible": "him_flat > 0", "children": [
+                  { "type": "image", "rect": ["-825 * (1 - him_flat)", 0, 825, 1080], "src": "assets/game/orpheus_male_flat.png", "fill": "stretch", "tint": "sel_him_dark" },
+                ] },
+              ] },
+              { "type": "group", "rect": ["680 - her_dx", 0, 927, 1080], "children": [
+                { "type": "image", "repeat": "4", "visible": "her_flat < 1", "rect": ["80 * trail_d{i} * (1 - her_flat)", 0, 927, 1080],
+                  "src": "assets/game/orpheus_female_flat.png", "fill": "stretch", "tint": "mix('#F059C9', '#FB8BDE', trail_f{i})" },
+                { "type": "image", "rect": [-6, -6, 939, 1092], "src": "assets/game/orpheus_female_edge.png", "fill": "stretch", "tint": "sel_her_dark" },
+                { "type": "image", "rect": [0, 0, 927, 1080], "src": "assets/game/orpheus_female_full.png", "fill": "stretch" },
+                { "type": "group", "rect": [0, 0, "927 * her_flat", 1080], "clip": true, "visible": "her_flat > 0", "children": [
+                  { "type": "image", "rect": [0, 0, 927, 1080], "src": "assets/game/orpheus_female_flat.png", "fill": "stretch", "tint": "sel_her_dark" },
+                ] },
+              ] },
+            ] },
           ] },
           // Taps: his half and hers (hover, then choose).
           { "type": "rect", "rect": [0, 0, 620, 1080], "visible": "screen == 'select'", "on_tap": { "call": "tap_pick", "args": [0] } },

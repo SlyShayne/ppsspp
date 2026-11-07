@@ -7,14 +7,14 @@ menu with both protagonists and Config), then:
     python -I gungnir/tools/p3p_assets.py <PSP/TEXTURES/ULUS10512/new> gungnir/packs/slyshayne.p3p/assets/game
 
 A third folder, optional, holds orpheus_male.png and orpheus_female.png decoded from the game's
-umd0.cpk (see orpheus() below) for the protagonist select's silhouettes.
+umd0.cpk (see orpheus() below) for the protagonist select.
 
 Needs Pillow. Texture names are PPSSPP's hashes for the US release (ULUS10512).
 """
 import os
 import sys
 
-from PIL import Image, ImageOps
+from PIL import Image, ImageFilter, ImageOps
 
 WHOLE = {
     "art_female.png": "09443a10b93c8800fdbcf696.png",
@@ -150,17 +150,37 @@ def main(src, dst):
     print("wrote the art to", dst, "and title_text.png to", textures)
 
 
+ORPHEUS_HEIGHT = 1080  # the second screen's height: each Orpheus touches its top and bottom
+ORPHEUS_EDGE = 6       # the outline round the full-colour one, as the protagonists have on the game's screen
+
+
 def orpheus(src, dst):
-    """Orpheus, his and hers, as white silhouettes (the pack tints them flat, so the design stays hidden).
-    [src] holds orpheus_male.png and orpheus_female.png: the game's data/camp/persona/pst_001.tmx and
-    pst_0AE.tmx (in PSP_GAME/USRDIR/umd0.cpk), decoded to RGBA."""
+    """Orpheus, his and hers, cropped to the figure and scaled smoothly to ORPHEUS_HEIGHT (the pack draws them
+    1:1, so their edges stay smooth): _full in colour, _flat and _edge white (the pack tints them), _edge
+    ORPHEUS_EDGE px bigger all round. [src] holds orpheus_male.png and orpheus_female.png: the game's
+    data/camp/persona/pst_001.tmx and pst_0AE.tmx (in PSP_GAME/USRDIR/umd0.cpk), decoded to RGBA."""
     for name in ("orpheus_male", "orpheus_female"):
         image = Image.open(os.path.join(src, name + ".png")).convert("RGBA")
-        mask = image.getchannel("A").point(lambda a: 255 if a >= 8 else 0)  # its background isn't quite 0
-        flat = Image.new("RGBA", image.size, (255, 255, 255, 0))
-        flat.putalpha(mask)
+        alpha = image.getchannel("A").point(lambda a: a if a >= 8 else 0)  # its background isn't quite 0
+        image.putalpha(alpha)
+        image = image.crop(alpha.getbbox())
+        size = (round(image.width * ORPHEUS_HEIGHT / image.height), ORPHEUS_HEIGHT)
+        # Scaled with its colour premultiplied, so the edges don't pick up the background's colour.
+        full = image.convert("RGBa").resize(size, Image.LANCZOS).convert("RGBA")
+        full.save(os.path.join(dst, name + "_full.png"))
+        # Solid inside (its harp strings are see-through in colour), still smooth at the edge.
+        flat = Image.new("RGBA", size, (255, 255, 255, 0))
+        flat.putalpha(full.getchannel("A").point(lambda a: 0 if a < 24 else min(255, 8 * a)))
         flat.save(os.path.join(dst, name + "_flat.png"))
-    print("wrote the Orpheus silhouettes to", dst)
+        e = ORPHEUS_EDGE
+        grown = Image.new("L", (size[0] + 2 * e, size[1] + 2 * e), 0)
+        grown.paste(full.getchannel("A"), (e, e))
+        grown = grown.filter(ImageFilter.MaxFilter(2 * e + 1)).filter(ImageFilter.GaussianBlur(1))
+        edge = Image.new("RGBA", grown.size, (255, 255, 255, 0))
+        edge.putalpha(grown)
+        edge.save(os.path.join(dst, name + "_edge.png"))
+        print("%s: %dx%d" % (name, size[0], size[1]))
+    print("wrote the Orpheus pictures to", dst)
 
 
 if __name__ == "__main__":
