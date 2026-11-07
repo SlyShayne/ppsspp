@@ -49,16 +49,6 @@ local function breath()
     return BREATH_FLOOR + (1.0 - BREATH_FLOOR) * b
 end
 
-local HELP = {
-    [0] = "Turn event voices ON/OFF",
-    [1] = "Auto advance text during voiced events",
-    [2] = "Remember the cursor position during battle",
-    [3] = "Remember Tactics settings after battles",
-    [4] = "Invert the rotation of the battle command menu",
-    [5] = "Turn Data Install ON/OFF",
-    [6] = "Confirm the settings and return to the game",
-}
-
 local frame = 0          -- the last update's game frame
 local busyUntil = 0      -- a tap's presses run until this frame
 local screen = "idle"
@@ -129,7 +119,6 @@ function update(info)
         local row = mem.u32(CFG_CURSOR)
         publish("row", row)
         for k = 0, 5 do publish("v" .. k, mem.u32(CFG_VALUES + 4 * k)) end
-        publish("help", HELP[row] or "")
     end
 end
 
@@ -169,11 +158,13 @@ end
 
 -- Config: a row's name selects it (and shows its help); ON and OFF switch it; OK confirms.
 function tap_row(row)
+    row = tonumber(row)  -- from a repeat's {i}
     if screen ~= "config" or not begin() then return false end
     finish(snapCursor(CFG_CURSOR, row))
 end
 
 function tap_switch(row, on)
+    row, on = tonumber(row), tonumber(on)  -- from a repeat's {i}
     if screen ~= "config" or not begin() then return false end
     -- Auto Text has no choice while Voices is OFF (the game shows NONE).
     if row == 1 and mem.u32(CFG_VALUES) == 0 then return false end

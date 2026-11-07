@@ -43,6 +43,20 @@ The background is vertex colours, not a texture: radial from the top-right corne
 Right sets OFF and Left sets ON (no wrap). With Voices OFF, Auto Text shows NONE (its value is
 kept). Circle backs out; Confirm (row 6, Cross) applies. Each row has a help line under the list.
 
+How it's drawn (from the game's screen at 4x and its dumped textures): the bars, plates, underlines and
+slanted switch halves are flat colours (`#2695FF` header, `#6CB0F9` body, `#003B5D` dark, `#FFC347`
+lit), not textures. Row `i`'s top is at y 46.25 + 23i (PSP px). The CONFIG word, ON/OFF/NONE/OK, the
+help arrow and the button prompts are atlas sprites, tinted. Row names and help lines are drawn a letter
+at a time, each letter its own 32x32 white texture at 0.82 scale, placed wherever the game has room
+(so only the data hash in the texture's name is stable). Help lines, with the game's line breaks:
+Turn event voices / ON/OFF; Auto advance text / during voiced events; Remember the cursor position /
+during battle; Remember Tactics settings / after battles; Invert the rotation / of the battle command
+menu; Turn Data Install / ON/OFF; Confirm the settings / and return to the game.
+
+The title's portraits swap each time PRESS ANY BUTTON and the menu change places (`0x093BAF48` flips
+as the phase becomes 8 or 6): the incoming one fades in sliding from 48 PSP px to the left, the outgoing
+one fades out in place, both on the crossfade at `0x093BAF64`.
+
 ## Draw lists (not state)
 
 `0x08D60000`–`0x08D80000` and its double buffer `0x08DB0000`–`0x08DD0000` hold the game's per-frame

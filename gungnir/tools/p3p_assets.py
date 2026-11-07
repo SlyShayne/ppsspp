@@ -1,8 +1,8 @@
-"""Builds the slyshayne.p3p pack's title art from textures dumped from your own copy of the game.
+"""Builds the slyshayne.p3p pack's title and Config art from textures dumped from your own copy of the game.
 
 The art is the game's, so it isn't in the repository (the pack's assets/game/ is gitignored). Dump the
 title's textures with PPSSPP ([Graphics] SaveNewTextures = True in ppsspp.ini, then open the title
-menu with both protagonists), then:
+menu with both protagonists and Config), then:
 
     python -I gungnir/tools/p3p_assets.py <PSP/TEXTURES/ULUS10512/new> gungnir/packs/slyshayne.p3p/assets/game
 
@@ -33,6 +33,92 @@ PIECES = {
 }
 
 
+# Config, drawn 4x (the second screen's scale) with smooth scaling: (texture, u, v, w, h).
+CONFIG = {
+    "cfg_title.png": ("0938f1b0840abcac91f82444", 2, 46, 144, 20),
+    "cfg_on.png": ("0937ef301546d75730ff9a8d", 45, 115, 17, 7),
+    "cfg_off.png": ("0937ef301546d75730ff9a8d", 102, 115, 24, 7),
+    "cfg_none.png": ("0937ef301546d75730ff9a8d", 65, 115, 34, 7),
+    "cfg_ok.png": ("0937ef301546d75730ff9a8d", 2, 102, 17, 7),
+    "cfg_arrow.png": ("09367a10d5c9ffce74e8c8c4", 246, 60, 8, 7),
+    "cfg_dpad.png": ("0937a0905267b1ffb3bf1128", 212, 24, 19, 17),
+    "cfg_switch.png": ("0937a0905267b1ffb3bf1128", 154, 23, 43, 15),
+    "cfg_x.png": ("0937a0905267b1ffb3bf1128", 24, 3, 16, 16),
+    "cfg_okword.png": ("0937a0905267b1ffb3bf1128", 87, 3, 21, 17),
+    "cfg_o.png": ("0937a0905267b1ffb3bf1128", 3, 3, 16, 16),
+    "cfg_back.png": ("0937a0905267b1ffb3bf1128", 63, 23, 30, 15),
+}
+# Config's text is drawn a letter at a time, each letter its own 32x32 texture (white, alpha only) at 0.82
+# scale. A letter's texture is uploaded wherever the game has room, so it's found by the data hash at the
+# end of its name: char -> hash. A space is a texture too (a faint dot, not drawn here).
+GLYPHS = {
+    "a": "03c284bb", "b": "85c15dfb", "c": "fa5d73e5", "d": "01ee6886", "e": "5f052b7b", "f": "6bd9ec9b",
+    "g": "ca6572b7", "h": "7381cdbd", "i": "03d68669", "l": "2fd6cc73", "m": "b843bdf1", "n": "dfc428fd",
+    "o": "e69566ec", "p": "2860d806", "r": "bea63980", "s": "fb6eb1bb", "t": "2c95eb3b", "u": "061a0485",
+    "v": "dfe78a82", "x": "2a092878", "y": "db0c564c", "A": "ed147567", "C": "7d39374c", "D": "edb7ebdc",
+    "F": "935e4650", "I": "3cd6bd22", "M": "ef15fc3e", "N": "6775f70b", "O": "df4626de", "R": "ea689d87",
+    "T": "c16af3e7", "V": "493188aa", "/": "2563dfb6", " ": "1fe5e53c",
+}
+ROWS = ["Voices", "Auto Text", "Cursor Memory", "Tactics Memory", "Invert Rotation", "Data Install", "Confirm"]
+HELP = [
+    ["Turn event voices", "ON/OFF"],
+    ["Auto advance text", "during voiced events"],
+    ["Remember the cursor position", "during battle"],
+    ["Remember Tactics settings", "after battles"],
+    ["Invert the rotation", "of the battle command menu"],
+    ["Turn Data Install", "ON/OFF"],
+    ["Confirm the settings", "and return to the game"],
+]
+SCALE = 4
+GLYPH_SCALE = 0.82 * SCALE
+GAP = 1.4 * SCALE
+LINE = 13 * SCALE
+PAD = 16  # the first letter's ink starts this far into the picture
+
+
+def glyphs(src):
+    """char -> (picture at GLYPH_SCALE, ink left, ink right in texture pixels)."""
+    files = {name[16:24]: name for name in os.listdir(src) if len(name) == 28 and name.endswith(".png")}
+    cell = round(32 * GLYPH_SCALE)
+    out = {}
+    for ch, data in GLYPHS.items():
+        if data not in files:
+            sys.exit("missing the glyph %r (*%s.png): open every Config row with texture dumping on" % (ch, data))
+        image = Image.open(os.path.join(src, files[data])).convert("RGBA")
+        left, _, right, _ = image.getchannel("A").getbbox() or (13, 0, 19, 0)
+        out[ch] = (image.resize((cell, cell), Image.BILINEAR), left, right)
+    return out
+
+
+def text(font, lines):
+    """Lines as the game lays them out: each letter's ink follows the last one's, GAP apart."""
+    cell = round(32 * GLYPH_SCALE)
+    placed, width = [], 0
+    for row, line in enumerate(lines):
+        pen = float(PAD)
+        for ch in line:
+            image, left, right = font[ch]
+            x = pen - left * GLYPH_SCALE
+            if ch != " ":
+                placed.append((image, round(x), row * LINE))
+            pen = x + right * GLYPH_SCALE + GAP
+        width = max(width, int(pen) + PAD)
+    out = Image.new("RGBA", (width, cell + LINE * (len(lines) - 1)), (0, 0, 0, 0))
+    for image, x, y in placed:
+        out.alpha_composite(image, (x, y))
+    return out
+
+
+def config(src, dst):
+    for name, (tex, u, v, w, h) in CONFIG.items():
+        piece = Image.open(os.path.join(src, tex + ".png")).convert("RGBA").crop((u, v, u + w, v + h))
+        piece.resize((w * SCALE, h * SCALE), Image.BILINEAR).save(os.path.join(dst, name))
+    font = glyphs(src)
+    for i, name in enumerate(ROWS):
+        text(font, [name]).save(os.path.join(dst, "cfg_label_%d.png" % i))
+    for i, lines in enumerate(HELP):
+        text(font, lines).save(os.path.join(dst, "cfg_help_%d.png" % i))
+
 def main(src, dst):
     os.makedirs(dst, exist_ok=True)
     for name, tex in WHOLE.items():
@@ -57,7 +143,8 @@ def main(src, dst):
     u, v, w, h = PIECES["text_copyright.png"]
     hidden.paste(atlas.crop((u, v, u + w, v + h)), (u, v))
     hidden.save(os.path.join(textures, "title_text.png"))
-    print("wrote", len(WHOLE) + len(PIECES) + 1, "files to", dst, "and title_text.png to", textures)
+    config(src, dst)
+    print("wrote the art to", dst, "and title_text.png to", textures)
 
 
 if __name__ == "__main__":
