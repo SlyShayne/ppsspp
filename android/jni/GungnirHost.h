@@ -4,8 +4,8 @@
 //
 // Packs: the player drops pack folders or .zip files into <memory stick>/PSP/GUNGNIR/packs/. They're
 // copied into an app folder Core can open with plain file calls (a memory stick on an SD card is a
-// content:// URI), at boot and when the pause menu's picker opens. The pause menu chooses the pack
-// per game.
+// content:// URI), at boot and when the game screen's picker opens. The game screen (the game's info
+// page in the main menu) chooses the pack per game, never while it runs.
 
 #pragma once
 
@@ -31,24 +31,22 @@ void GungnirHost_MixAudio(int16_t *stereo, int frames, int sampleRateHz);
 std::string GungnirHost_PacksRoot();
 std::string GungnirHost_DropFolder();
 
-// ---- the pause menu's picker. Emu thread (PPSSPP's UI runs on it too). ----
+// ---- the game screen's picker (UI/GameScreen.cpp), for a game that isn't running. UI thread. ----
+// The pack is never switched while a game runs: a choice applies from the game's next launch.
 
 struct GungnirPackEntry {
 	std::string folder;  // its folder under packs/: its ID
 	std::string name;    // package.json's "name"
 };
 
-// Whether a game with a disc ID is running, so there's something to choose a pack for.
-bool GungnirHost_HasGame();
-// Brings packs in from the drop folder, then lists the installed ones that list this game, by name.
-std::vector<GungnirPackEntry> GungnirHost_RefreshPacksForGame();
-// The same list without looking in the drop folder: cheap, for showing the current pack's name.
-std::vector<GungnirPackEntry> GungnirHost_PacksForGame();
-// This game's choice: GUNGNIR_CHOICE_AUTO (the first pack that lists it), GUNGNIR_CHOICE_NONE, or a folder.
+// Lists the installed packs that list the game with this disc ID (PARAM.SFO's DISC_ID), by folder.
+// [sync] first brings packs in from the drop folder; that's skipped while a game runs, as it may
+// uninstall packs.
+std::vector<GungnirPackEntry> GungnirHost_PacksForGame(const std::string &discId, bool sync);
+// A game's choice: GUNGNIR_CHOICE_AUTO (the first pack that lists it), GUNGNIR_CHOICE_NONE, or a folder.
 extern const char *const GUNGNIR_CHOICE_AUTO;
 extern const char *const GUNGNIR_CHOICE_NONE;
-std::string GungnirHost_Choice();
-// Saves this game's choice and switches the companion to it now.
-void GungnirHost_SetChoice(const std::string &choice);
-// The pack running now, by folder; "" for none.
-std::string GungnirHost_RunningPack();
+std::string GungnirHost_ChoiceForGame(const std::string &discId);
+void GungnirHost_SetChoiceForGame(const std::string &discId, const std::string &choice);
+// Whether a game is running (booted, until it stops), when the picker isn't offered.
+bool GungnirHost_GameRunning();

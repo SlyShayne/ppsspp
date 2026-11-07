@@ -16,6 +16,7 @@
 #include "android/jni/GungnirHost.h"
 
 #include <algorithm>
+#include <atomic>
 #include <cctype>
 #include <cstdio>
 #include <cstring>
@@ -52,6 +53,7 @@ GungnirCommandSink g_sink = nullptr;
 std::string g_appRoot;
 
 // Emu thread only.
+std::atomic<bool> g_gameRunning{false};  // from STARTING to STOPPED: the pack picker isn't offered
 bool g_tried = false;     // looked for a pack for this boot
 bool g_running = false;   // gn_runtime_start was called, and stop not yet
 std::string g_runningPack;
@@ -140,11 +142,10 @@ uint64_t HostFrameCount(void *) {
 	return g_frames;
 }
 
-// PARAM.SFO's DISC_ID, as packs name PSP games: upper case, no dash ("ULUS10500").
-void FillGameId(GnGameId *id) {
+// A PARAM.SFO DISC_ID as packs name PSP games: upper case, no dash ("ULUS10500").
+void MakeGameId(const std::string &discId, GnGameId *id) {
 	memset(id, 0, sizeof(*id));
 	id->platform = GN_PLATFORM_PSP;
-	const std::string discId = g_paramSFO.GetDiscID();
 	size_t n = 0;
 	for (char c : discId) {
 		if (c == '-' || c == '_' || c == ' ') {
@@ -166,7 +167,7 @@ void FillCore() {
 	g_regions[3] = {"vram", PSP_GetVidMemBase(), 0x00200000, false, false};
 
 	memset(&g_core, 0, sizeof(g_core));
-	FillGameId(&g_core.id);
+	MakeGameId(g_paramSFO.GetDiscID(), &g_core.id);
 	g_core.capabilities = 0;  // None of the GBA ones: packs for PSP games need only memory.
 	g_core.regions = g_regions;
 	g_core.regionCount = sizeof(g_regions) / sizeof(g_regions[0]);
@@ -529,11 +530,11 @@ void SyncPacks() {
 
 // ---- choosing the pack ----
 
-// Installed packs that list this game, sorted by folder.
-std::vector<GungnirPackEntry> PacksForGame() {
+// Installed packs that list [game], sorted by folder.
+std::vector<GungnirPackEntry> PacksForGame(const GnGameId &game) {
 	std::vector<GungnirPackEntry> packs;
 	std::vector<File::FileInfo> entries;
-	if (g_core.id.code[0] == '\0' || !File::GetFilesInDir(AppPath("packs"), &entries)) {
+	if (game.code[0] == '\0' || !File::GetFilesInDir(AppPath("packs"), &entries)) {
 		return packs;
 	}
 	std::sort(entries.begin(), entries.end(), [](const File::FileInfo &a, const File::FileInfo &b) { return a.name < b.name; });
@@ -542,7 +543,7 @@ std::vector<GungnirPackEntry> PacksForGame() {
 			continue;
 		}
 		const std::string dir = entry.fullName.ToString();
-		if (gn_runtime_pack_matches(dir.c_str(), &g_core.id)) {
+		if (gn_runtime_pack_matches(dir.c_str(), &game)) {
 			std::string id, name;
 			if (!ReadPackInfo(entry.fullName, &id, &name)) {
 				name = entry.name;
@@ -553,14 +554,14 @@ std::vector<GungnirPackEntry> PacksForGame() {
 	return packs;
 }
 
-Path ChoicePath() {
-	return AppPath("choices") / (std::string(g_core.id.code) + ".txt");
+Path ChoicePath(const GnGameId &game) {
+	return AppPath("choices") / (std::string(game.code) + ".txt");
 }
 
-std::string ReadChoice() {
+std::string ReadChoice(const GnGameId &game) {
 	std::string choice;
-	if (g_core.id.code[0] != '\0') {
-		File::ReadTextFileToString(ChoicePath(), &choice);
+	if (game.code[0] != '\0') {
+		File::ReadTextFileToString(ChoicePath(game), &choice);
 	}
 	while (!choice.empty() && isspace((unsigned char)choice.back())) {
 		choice.pop_back();
@@ -569,12 +570,12 @@ std::string ReadChoice() {
 }
 
 // The pack to run: the chosen one if it still lists the game, else the first that does. "" for none.
-std::string ResolvePack() {
-	const std::string choice = ReadChoice();
+std::string ResolvePack(const GnGameId &game) {
+	const std::string choice = ReadChoice(game);
 	if (choice == GUNGNIR_CHOICE_NONE) {
 		return "";
 	}
-	const std::vector<GungnirPackEntry> packs = PacksForGame();
+	const std::vector<GungnirPackEntry> packs = PacksForGame(game);
 	for (const auto &pack : packs) {
 		if (pack.folder == choice) {
 			return pack.folder;
@@ -629,9 +630,10 @@ void Start() {
 		return;
 	}
 	SyncPacks();
-	const std::string pack = ResolvePack();
+	const std::string pack = ResolvePack(g_core.id);
 	if (pack.empty()) {
-		INFO_LOG(Log::System, "Gungnir: no pack for %s (choice: %s)", g_core.id.code, ReadChoice().empty() ? "automatic" : ReadChoice().c_str());
+		const std::string choice = ReadChoice(g_core.id);
+		INFO_LOG(Log::System, "Gungnir: no pack for %s (choice: %s)", g_core.id.code, choice.empty() ? "automatic" : choice.c_str());
 		return;
 	}
 	StartPack(pack);
@@ -671,9 +673,13 @@ void OnLifecycle(CoreLifecycle stage) {
 	case CoreLifecycle::STARTING:
 		// A new boot: look for its pack on its first vblank, once PARAM.SFO and memory are ready.
 		Stop();
+		g_gameRunning = true;
 		break;
 	case CoreLifecycle::STOPPING:
 		Stop();
+		break;
+	case CoreLifecycle::STOPPED:
+		g_gameRunning = false;
 		break;
 	default:
 		break;
@@ -729,51 +735,41 @@ void GungnirHost_MixAudio(int16_t *stereo, int frames, int sampleRateHz) {
 	}
 }
 
-bool GungnirHost_HasGame() {
-	return g_tried && g_core.id.code[0] != '\0';
+bool GungnirHost_GameRunning() {
+	return g_gameRunning.load();
 }
 
-std::vector<GungnirPackEntry> GungnirHost_RefreshPacksForGame() {
-	if (!GungnirHost_HasGame()) {
+std::vector<GungnirPackEntry> GungnirHost_PacksForGame(const std::string &discId, bool sync) {
+	GnGameId game;
+	MakeGameId(discId, &game);
+	if (game.code[0] == '\0') {
 		return {};
 	}
-	SyncPacks();
-	// A pack removed by the sync can't keep running.
-	if (g_running && !File::Exists(AppPath("packs") / g_runningPack)) {
-		StopPack();
+	// Syncing may uninstall a pack, so never while a game (and maybe its pack) runs.
+	if (sync && !g_gameRunning.load()) {
+		SyncPacks();
 	}
-	return PacksForGame();
+	return PacksForGame(game);
 }
 
-std::vector<GungnirPackEntry> GungnirHost_PacksForGame() {
-	return GungnirHost_HasGame() ? PacksForGame() : std::vector<GungnirPackEntry>();
+std::string GungnirHost_ChoiceForGame(const std::string &discId) {
+	GnGameId game;
+	MakeGameId(discId, &game);
+	return ReadChoice(game);
 }
 
-std::string GungnirHost_Choice() {
-	return GungnirHost_HasGame() ? ReadChoice() : "";
-}
-
-void GungnirHost_SetChoice(const std::string &choice) {
-	if (!GungnirHost_HasGame()) {
+void GungnirHost_SetChoiceForGame(const std::string &discId, const std::string &choice) {
+	GnGameId game;
+	MakeGameId(discId, &game);
+	if (game.code[0] == '\0') {
 		return;
 	}
-	const Path path = ChoicePath();
+	const Path path = ChoicePath(game);
 	if (choice.empty()) {
 		File::Delete(path, true);
 	} else {
 		File::CreateFullPath(AppPath("choices"));
 		File::WriteStringToFile(true, choice, path);
 	}
-	const std::string pack = ResolvePack();
-	if (g_running && pack == g_runningPack) {
-		return;
-	}
-	StopPack();
-	if (!pack.empty()) {
-		StartPack(pack);
-	}
-}
-
-std::string GungnirHost_RunningPack() {
-	return g_runningPack;
+	INFO_LOG(Log::System, "Gungnir: %s's pack is now %s, from its next launch", game.code, choice.empty() ? "automatic" : choice.c_str());
 }

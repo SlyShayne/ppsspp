@@ -63,6 +63,10 @@
 #include "UI/SavedataScreen.h"
 #include "UI/MiscViews.h"
 
+#if PPSSPP_PLATFORM(ANDROID)
+#include "android/jni/GungnirHost.h"
+#endif
+
 // This is in an objective-C file.
 #if PPSSPP_PLATFORM(IOS)
 void copyDeepLinkForPath(std::string_view filePath);
@@ -642,6 +646,54 @@ void GameScreen::CreateSettingsViews(UI::ViewGroup *rightColumn) {
 			CRC32string = "...";  // signal that we're waiting for it. Kinda ugly.
 		});
 	}
+
+#if PPSSPP_PLATFORM(ANDROID)
+	// Gungnir: which companion pack draws the second screen for this game (android/jni/GungnirHost.h).
+	// Only here, before the game starts, so a pack never changes while it runs.
+	if (!info_->id.empty() && !inGame_ && !GungnirHost_GameRunning()) {
+		const std::string discId = info_->id;
+		const std::string choice = GungnirHost_ChoiceForGame(discId);
+		std::string current(ga->T("Automatic"));
+		if (choice == GUNGNIR_CHOICE_NONE) {
+			current = ga->T("None");
+		} else if (!choice.empty()) {
+			for (const auto &pack : GungnirHost_PacksForGame(discId, false)) {
+				if (pack.folder == choice) {
+					current = pack.name;
+				}
+			}
+		}
+		Choice *companion = choices->Add(new Choice(ApplySafeSubstitutions(ga->T("Companion pack: %1"), current), ImageID("I_DISPLAY")));
+		companion->OnClick.Add([this, discId](UI::EventParams &e) {
+			auto ga = GetI18NCategory(I18NCat::GAME);
+			// Picks up packs dropped on the memory stick since the last look.
+			const std::vector<GungnirPackEntry> packs = GungnirHost_PacksForGame(discId, true);
+			const std::string choice = GungnirHost_ChoiceForGame(discId);
+			std::vector<std::string> items = { std::string(ga->T("Automatic")), std::string(ga->T("None")) };
+			int selected = choice == GUNGNIR_CHOICE_NONE ? 1 : 0;
+			for (size_t i = 0; i < packs.size(); i++) {
+				items.push_back(packs[i].name);
+				if (packs[i].folder == choice) {
+					selected = (int)i + 2;
+				}
+			}
+			ListPopupScreen *popup = new ListPopupScreen(ga->T("Companion pack"), items, selected, [this, discId, packs](int index) {
+				if (index == 0) {
+					GungnirHost_SetChoiceForGame(discId, GUNGNIR_CHOICE_AUTO);
+				} else if (index == 1) {
+					GungnirHost_SetChoiceForGame(discId, GUNGNIR_CHOICE_NONE);
+				} else if (index - 2 < (int)packs.size()) {
+					GungnirHost_SetChoiceForGame(discId, packs[index - 2].folder);
+				}
+				RecreateViews();
+			});
+			if (e.v) {
+				popup->SetPopupOrigin(e.v);
+			}
+			screenManager()->push(popup);
+		});
+	}
+#endif
 
 	packBarShown_ = GamePacker::IsBusy();
 	if (packBarShown_) {
