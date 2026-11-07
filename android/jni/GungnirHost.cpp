@@ -671,7 +671,80 @@ void Stop() {
 }
 
 // The frame boundary: after the game's frame, before its vblank handlers.
+// ---- the developer hook: working out a game's memory over USB ----
+// For writing a pack: with adb (`run-as`, since the folder is the app's own), put a command file at
+// <appRoot>/dev/cmd.txt while a game runs. It's read and deleted within a second, on the emu thread,
+// and the result goes in <appRoot>/dev/out.txt. Nothing else can write that folder, and without the
+// file this costs one Exists() a second. One command a line:
+//   dump <address> <size> <file>   copies game memory (hex address and size) to <appRoot>/dev/<file>
+//   press <button> <vblanks>       presses a PSP button: up down left right cross circle square
+//                                  triangle l r start select
+uint64_t g_devVblanks = 0;
+
+u32 DevButton(const std::string &name) {
+	static const struct {
+		const char *name;
+		u32 psp;
+	} BUTTONS[] = {
+		{"up", CTRL_UP}, {"down", CTRL_DOWN}, {"left", CTRL_LEFT}, {"right", CTRL_RIGHT},
+		{"cross", CTRL_CROSS}, {"circle", CTRL_CIRCLE}, {"square", CTRL_SQUARE}, {"triangle", CTRL_TRIANGLE},
+		{"l", CTRL_LTRIGGER}, {"r", CTRL_RTRIGGER}, {"start", CTRL_START}, {"select", CTRL_SELECT},
+	};
+	for (const auto &b : BUTTONS) {
+		if (name == b.name) {
+			return b.psp;
+		}
+	}
+	return 0;
+}
+
+void DevCommands() {
+	if (g_appRoot.empty() || ++g_devVblanks % 60 != 0) {
+		return;
+	}
+	const Path dir = AppPath("dev");
+	const Path cmdPath = dir / "cmd.txt";
+	if (!File::Exists(cmdPath)) {
+		return;
+	}
+	std::string commands;
+	File::ReadTextFileToString(cmdPath, &commands);
+	File::Delete(cmdPath, true);
+	std::string out;
+	size_t start = 0;
+	while (start < commands.size()) {
+		size_t end = commands.find('\n', start);
+		if (end == std::string::npos) {
+			end = commands.size();
+		}
+		const std::string line = commands.substr(start, end - start);
+		start = end + 1;
+		char verb[16] = {}, arg[64] = {}, file[64] = {};
+		unsigned address = 0, size = 0;
+		int frames = 0;
+		if (sscanf(line.c_str(), "dump %x %x %63s", &address, &size, file) == 3) {
+			const std::string name = file;
+			if (name.find('/') != std::string::npos || name.find("..") != std::string::npos || size == 0 || size > 0x4000000 ||
+				!Memory::IsValidRange(address, size)) {
+				out += "refused: " + line + "\n";
+				continue;
+			}
+			File::WriteDataToFile(false, Memory::GetPointerUnchecked(address), size, dir / name);
+			out += "dumped " + line + "\n";
+		} else if (sscanf(line.c_str(), "press %63s %d", arg, &frames) == 2 && DevButton(arg) && frames > 0 && frames <= 600) {
+			__CtrlPressFor(DevButton(arg), frames);
+			out += "pressed " + line + "\n";
+		} else if (sscanf(line.c_str(), "%15s", verb) == 1) {
+			out += "unknown: " + line + "\n";
+		}
+	}
+	char frame[64];
+	snprintf(frame, sizeof(frame), "at vblank %llu\n", (unsigned long long)g_devVblanks);
+	File::WriteStringToFile(true, out + frame, dir / "out.txt");
+}
+
 void OnVblank() {
+	DevCommands();
 	if (!g_tried) {
 		Start();
 	}
