@@ -231,6 +231,35 @@ end
 -- The Dark Hour clock, whenever the game shows it (scripts/clock.lua).
 local clock = pack.require("scripts/clock")
 
+-- The game's flags: flag n is bit n & 31 of the word at GAME_FLAGS + (n >> 5) * 4 (the game's 0x0880C150).
+local GAME_FLAGS = 0x08E68298
+local function gameFlag(n)
+    return (mem.u32(GAME_FLAGS + (n >> 5) * 4) >> (n & 31)) & 1 == 1
+end
+-- The Dark Hour: the one flag the game sets as its clock scene begins (on through the green that follows).
+-- Menus can take their colours from it.
+local DARK_HOUR_FLAG = 0x1429
+local DARK_HOUR_GREEN = "#001400"  -- the green the game turns the screen at midnight
+-- After the clock, the game's screen holds black about 58 frames, then fades the green scene in over 38.
+local DARK_HOUR_WAIT, DARK_HOUR_FADE = 58, 38
+local darkHourFrom = nil  -- the frame this screen's green starts coming in
+local clockWasUp = false
+
+-- This screen's green through the Dark Hour, once the clock (which has its own) is gone.
+local function darkHour(clockUp)
+    if not gameFlag(DARK_HOUR_FLAG) then
+        darkHourFrom = nil
+    elseif clockUp then
+        darkHourFrom = nil
+    elseif not darkHourFrom then
+        -- Just after the clock, wait for the game's screen; otherwise (a save loaded in it) come in now.
+        darkHourFrom = frame + (clockWasUp and DARK_HOUR_WAIT or 0)
+    end
+    clockWasUp = clockUp
+    publish("dark_hour", darkHourFrom and 1 or 0)
+    publish("dh_tint", darkHourFrom and ramp(frame - darkHourFrom, { 0, DARK_HOUR_FADE }) or 0)
+end
+
 -- Choices in conversations (Yes/No and the like): this screen draws the box, the game's doesn't. Each
 -- message window is in a list (WIN_LIST + 0xC: the first node; a node's +0x4 the next, +0xC its window).
 -- A window's first word is its state: bits 0xC00 are 0x800 while it's asking, and its +0x40 then holds
@@ -351,7 +380,7 @@ function update(info)
     frame = info.frame
     patchChoices()
     choice()
-    clock.update(publish, frame)
+    darkHour(clock.update(publish, frame))
     local phase = mem.u32(TITLE_PHASE)
     local s = screenFor(phase)
     -- Between the title going and the select's object coming (about 8 frames), stay black.

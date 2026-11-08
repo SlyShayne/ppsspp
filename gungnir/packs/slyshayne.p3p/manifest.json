@@ -19,6 +19,7 @@
     "trail_d0": { "state": 3 }, "trail_d1": { "state": 2 }, "trail_d2": { "state": 1 }, "trail_d3": { "state": 0 },
     "trail_f0": { "state": 0.84 }, "trail_f1": { "state": 0.42 }, "trail_f2": { "state": 0.05 }, "trail_f3": { "state": 0 },
     "row": { "state": 0 },
+    "dark_hour": { "state": 0 }, "dh_tint": { "state": 0 },
     "clk_on": { "state": 0 }, "clk_tint": { "state": 0 }, "clk_path": { "state": "M 0 0 Z" },
     "clk_x0": { "state": 0 }, "clk_y0": { "state": 0 }, "clk_r0": { "state": 0 }, "clk_v0": { "state": 0 },
     "clk_x1": { "state": 0 }, "clk_y1": { "state": 0 }, "clk_r1": { "state": 0 }, "clk_v1": { "state": 0 },
@@ -56,6 +57,8 @@
     "home": {
       "bg": "#000000",
       "widgets": [
+        // ---- The Dark Hour (game flag 0x1429, scripts/main.lua): this screen fades to its green and stays.
+        { "type": "rect", "rect": [0, 0, 1240, 1080], "bg": "#001400", "opacity": "dh_tint" },
         // ---- the title: the game's own art (assets/game, built by gungnir/tools/p3p_assets.py) at the
         // top screen's 4x, rearranged for this narrower canvas. Each part fades in when the game's does.
         { "type": "group", "rect": [0, 0, 1240, 1080], "visible": "screen != 'idle' && screen != 'select'", "children": [

@@ -150,6 +150,11 @@ angles). Every piece but the numerals scales with the zoom; each is rigid in its
 redraws them (`gungnir/tools/p3p_clock.py`). The fill colour is `#0C6E2C`. The background: black until the hands
 reach 360, then `#001400`, whose alpha falls from full at zoom 2.79 to none at 4.03; the block is freed at the end.
 
+Game flag `0x1429` (word `0x08E6851C`, bit 9) is the Dark Hour: the only flag that changes across the scene, set
+early in it (before midnight) and still on in the green scenes after. After the clock the game's screen holds
+black about 58 frames, then fades the green station in over about 38. Game flag n is bit `n & 31` of the word at
+`0x08E68298 + (n >> 5) * 4`; the pack reads it with `gameFlag()` in `scripts/main.lua`.
+
 ## Draw lists (not state)
 
 `0x08D60000`–`0x08D80000` and its double buffer `0x08DB0000`–`0x08DD0000` hold the game's per-frame
