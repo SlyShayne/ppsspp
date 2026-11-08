@@ -228,6 +228,9 @@ local function portraits(s)
     publish("male_dx", female and 0 or -SLIDE * (1 - p))
 end
 
+-- The Dark Hour clock, whenever the game shows it (scripts/clock.lua).
+local clock = pack.require("scripts/clock")
+
 -- Choices in conversations (Yes/No and the like): this screen draws the box, the game's doesn't. Each
 -- message window is in a list (WIN_LIST + 0xC: the first node; a node's +0x4 the next, +0xC its window).
 -- A window's first word is its state: bits 0xC00 are 0x800 while it's asking, and its +0x40 then holds
@@ -348,6 +351,7 @@ function update(info)
     frame = info.frame
     patchChoices()
     choice()
+    clock.update(publish)
     local phase = mem.u32(TITLE_PHASE)
     local s = screenFor(phase)
     -- Between the title going and the select's object coming (about 8 frames), stay black.

@@ -131,6 +131,25 @@ options, both from its bottom edge. An opaque `#C7D0C9` rim, 5 px wide (11 at th
 bottom), round a panel of the same colour at about 90% opacity (`#CDD5CF` over white, `#B6BEB8` over
 near-black); the bar 250 x 20 from 8 px in; an 8 px shadow below.
 
+## The Dark Hour clock
+
+Seen on the first night (the station, "It's almost midnight..."): a pink clock on black ticks to XII, the screen
+turns green at midnight, and the clock bursts apart, its pieces flying off every edge before the green fades to
+black. All of it is 2D (through-mode) geometry the game works out itself, and it goes on drawing pieces well off the
+screen (y past 500).
+
+| Address | What |
+|---|---|
+| `0x08E96780` | Pointer to the clock's block while it's up (`0x09410110` here); its piece records start at +0x10. Also at `0x08F8CE44` |
+| record (0x34 bytes, 36 of them, slot 31 unused) | +0x4, +0x8 position; +0xC, +0x10 velocity a frame; +0x14 angle (degrees, clockwise); +0x18 its turn a frame; +0x1C zoom (shared: 1 until the burst, then up 0.03 a 30 Hz frame); +0x20 that step; +0x24.. per kind |
+
+Records 0-2 are the hands (all three at 360 the moment it's midnight), 3-14 the numerals (+0x2C, +0x30: 15.5, 8.5,
+half their size; each a 31x17 cell of the 128x128 atlas at `0x093A1C70`, tinted `#0B6D2B`, not scaled by the zoom),
+15-26 the triangle markers, 27-30 the inner ring's arcs and 32-35 the outer ring's (+0x24, +0x28 their start and end
+angles). Every piece but the numerals scales with the zoom; each is rigid in its own frame, which is how the pack
+redraws them (`gungnir/tools/p3p_clock.py`). The fill colour is `#0C6E2C`. The background: black until the hands
+reach 360, then `#001400`, whose alpha falls from full at zoom 2.79 to none at 4.03; the block is freed at the end.
+
 ## Draw lists (not state)
 
 `0x08D60000`–`0x08D80000` and its double buffer `0x08DB0000`–`0x08DD0000` hold the game's per-frame

@@ -19,6 +19,19 @@
     "trail_d0": { "state": 3 }, "trail_d1": { "state": 2 }, "trail_d2": { "state": 1 }, "trail_d3": { "state": 0 },
     "trail_f0": { "state": 0.84 }, "trail_f1": { "state": 0.42 }, "trail_f2": { "state": 0.05 }, "trail_f3": { "state": 0 },
     "row": { "state": 0 },
+    "clk_on": { "state": 0 }, "clk_tint": { "state": 0 }, "clk_path": { "state": "M 0 0 Z" },
+    "clk_x0": { "state": 0 }, "clk_y0": { "state": 0 }, "clk_r0": { "state": 0 }, "clk_v0": { "state": 0 },
+    "clk_x1": { "state": 0 }, "clk_y1": { "state": 0 }, "clk_r1": { "state": 0 }, "clk_v1": { "state": 0 },
+    "clk_x2": { "state": 0 }, "clk_y2": { "state": 0 }, "clk_r2": { "state": 0 }, "clk_v2": { "state": 0 },
+    "clk_x3": { "state": 0 }, "clk_y3": { "state": 0 }, "clk_r3": { "state": 0 }, "clk_v3": { "state": 0 },
+    "clk_x4": { "state": 0 }, "clk_y4": { "state": 0 }, "clk_r4": { "state": 0 }, "clk_v4": { "state": 0 },
+    "clk_x5": { "state": 0 }, "clk_y5": { "state": 0 }, "clk_r5": { "state": 0 }, "clk_v5": { "state": 0 },
+    "clk_x6": { "state": 0 }, "clk_y6": { "state": 0 }, "clk_r6": { "state": 0 }, "clk_v6": { "state": 0 },
+    "clk_x7": { "state": 0 }, "clk_y7": { "state": 0 }, "clk_r7": { "state": 0 }, "clk_v7": { "state": 0 },
+    "clk_x8": { "state": 0 }, "clk_y8": { "state": 0 }, "clk_r8": { "state": 0 }, "clk_v8": { "state": 0 },
+    "clk_x9": { "state": 0 }, "clk_y9": { "state": 0 }, "clk_r9": { "state": 0 }, "clk_v9": { "state": 0 },
+    "clk_x10": { "state": 0 }, "clk_y10": { "state": 0 }, "clk_r10": { "state": 0 }, "clk_v10": { "state": 0 },
+    "clk_x11": { "state": 0 }, "clk_y11": { "state": 0 }, "clk_r11": { "state": 0 }, "clk_v11": { "state": 0 },
     "ch_open": { "state": 0 }, "ch_text": { "state": 0 }, "ch_n": { "state": 2 }, "ch_cursor": { "state": 0 }, "ch_bar": { "state": "#428AFF" },
     "ch_t0": { "state": "" }, "ch_t1": { "state": "" }, "ch_t2": { "state": "" }, "ch_t3": { "state": "" },
     "ch_t4": { "state": "" }, "ch_t5": { "state": "" }, "ch_t6": { "state": "" }, "ch_t7": { "state": "" },
@@ -211,6 +224,16 @@
               "font": "assets/game/font_msg_{ch_f{i}}.json", "size": 104 },
             { "type": "rect", "repeat": "8", "visible": "{i} < ch_n", "rect": [0, "28 + 84 * {i}", 1088, 84], "on_tap": { "call": "tap_choice", "args": ["{i}"] } },
           ] },
+        ] },
+        // ---- The Dark Hour clock (scripts/clock.lua): the pieces that fly off the bottom of the game's screen carry on
+        // here, as if this screen were under it; on the green the game turns at midnight, fading out with the game's.
+        // Its pieces' pictures are built by gungnir/tools/p3p_clock.py.
+        { "type": "group", "rect": [0, 0, 1240, 1080], "visible": "clk_on", "children": [
+          { "type": "rect", "rect": [0, 0, 1240, 1080], "bg": "#001400", "opacity": "clk_tint" },
+          { "type": "image", "repeat": "12", "visible": "clk_v{i}", "rect": ["clk_x{i} - 62", "clk_y{i} - 34", 124, 68],
+            "src": "assets/game/clock_numeral_{i}.png", "fill": "stretch", "rotate": "clk_r{i}" },
+          { "type": "shape", "rect": [0, 0, 1240, 1080], "antialias": true, "shapes": [
+            { "kind": "path", "d": "{clk_path}", "fill": "#0C6E2C" } ] },
         ] },
       ],
     },
