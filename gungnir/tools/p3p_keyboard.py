@@ -8,8 +8,8 @@ the game's own keyboard at the second screen's 4x from one frame of it:
 
 The frame dump is a PPSSPP GE frame dump (.ppdmp, the WebSocket debugger's gpu.record.dump) of the keyboard up
 with the cursor on the first block. The texture dump dir is PPSSPP's TEXTURES/ULUS10512/new with the keyboard's
-textures in it (SaveNewTextures on while it's shown). Writes kb_*.png, which stay out of the repository like the
-rest of assets/game.
+textures in it (SaveNewTextures on while it's shown; leave the cursor still a few seconds so its glow is dumped
+too). Writes kb_*.png, which stay out of the repository like the rest of assets/game.
 
 Needs Pillow and zstandard.
 """
@@ -25,6 +25,10 @@ SCALE = 4
 # three are made transparent on the game's screen by the pack's psp_textures.
 TEXTURES = {"frame": "761e13dcd727d831", "font": "d71abe705af2670d", "icons": "fb9a49fbee39d8ff",
             "ball": "7be1e7f570d06089"}
+# The cursor's glow, a soft black disc the game pulses round the ball while it rests (not in every frame).
+GLOW = "075839fcf519dff4"
+# A button's background as the game draws it while it can't be used: its art this far across the frame texture.
+OFF_UV = (-88, 33)
 NAVY = 0xFF513935           # the frame's colour, and the buttons' text (ABGR)
 CELL = 0xFFF1BF99           # the keys' rows
 BAR = 0xFFB7FBF9            # the cursor's row
@@ -179,14 +183,37 @@ def main(dump, tex_dir, out):
                 white.append(s.moved(shift, WHITE))
             else:
                 base.append(s.moved(shift))
-        # Frame first, then rows, then letters, as the game draws them.
+        # Frame first, then rows, then letters, as the game draws them: the frame and the rows apart, since the
+        # rows come in one by one as the keyboard arrives.
         order = lambda s: 0 if kind(s) == "frame" or s.col == NAVY else (1 if row(s, CELL) else 2)
         base.sort(key=order)
         box = (PAGE_X, PAGE_Y, PAGE_W, PAGE_H)
-        picture(base, textures, box).save(os.path.join(out, "kb_page%d.png" % page))
+        picture([s for s in base if order(s) == 0], textures, box).save(os.path.join(out, "kb_frame%d.png" % page))
+        picture([s for s in base if order(s) > 0], textures, box).save(os.path.join(out, "kb_rows%d.png" % page))
         # The letters alone, black (over the cursor's row) and white (the key under the cursor).
         picture(black, textures, box).save(os.path.join(out, "kb_black%d.png" % page))
         picture(white, textures, box).save(os.path.join(out, "kb_white%d.png" % page))
+
+    # Each key's letter on its own, black, for the name as it's written: kb_k<key>.png, the key numbered as the
+    # game does (block * 30 + row * 5 + column).
+    for s in keys:
+        if not glyph(s):
+            continue
+        k = block(s)
+        col = round((s.x0 - 29 - BLOCK_W * k) / 19)
+        r = round((s.y0 - 139) / 16)
+        picture([s.moved(0, BLACK)], textures, (int(s.x0), int(s.y0), 17, 17)).save(
+            os.path.join(out, "kb_k%d.png" % (k * 30 + r * 5 + col)))
+    # The name's text cursor (a corner of the icons' texture, drawn black) and the cursor's glow, from its texture.
+    icons = textures[next(t for t, n in names.items() if n == "icons")]
+    bar_ = Image.merge("RGBA", [Image.new("L", (16, 5), 0)] * 3 + [icons.crop((0, 0, 16, 5)).split()[3]])
+    bar_.resize((16 * SCALE, 5 * SCALE), Image.BILINEAR).save(os.path.join(out, "kb_tcur.png"))
+    glow = [f for f in os.listdir(tex_dir) if f.lower().endswith(GLOW + ".png")]
+    if not glow:
+        sys.exit("the cursor's glow texture (*%s.png) isn't in %s: leave the cursor still a few seconds while "
+                 "dumping" % (GLOW, tex_dir))
+    Image.open(os.path.join(tex_dir, glow[0])).convert("RGBA").crop((1, 1, 31, 31)).resize(
+        (44 * SCALE, 44 * SCALE), Image.BILINEAR).save(os.path.join(out, "kb_glow.png"))
 
     # The buttons, each cut to its own picture; Del and End also as the game draws them while they can't be used.
     def group(name):
@@ -227,8 +254,19 @@ def main(dump, tex_dir, out):
         save("kb_%s_%s" % (name, "off" if disabled else "on"), g)
         if disabled:
             save("kb_%s_on" % name, enabled(g))
-    save("kb_l", group("l"))
-    save("kb_r", group("r"))
+    def disabled_(group_):
+        out_ = []
+        for s in group_:
+            m = s.moved(0)
+            if kind(s) == "frame":
+                u0, v0, u1, v1 = s.uv
+                m.uv = (u0 + OFF_UV[0], v0 + OFF_UV[1], u1 + OFF_UV[0], v1 + OFF_UV[1])
+            out_.append(m)
+        return out_
+
+    for name in ("l", "r"):
+        save("kb_%s_on" % name, group(name))
+        save("kb_%s_off" % name, disabled_(group(name)))
     # The page buttons: L's button without its L, the game's < (and > as R's has it, mirrored).
     l_bg = [s for s in group("l") if kind(s) == "frame"]
     arrow = [s for s in group("l") if kind(s) == "font"][0]

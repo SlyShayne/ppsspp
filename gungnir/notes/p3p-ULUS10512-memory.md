@@ -162,12 +162,22 @@ Seen on the first night at the dorm's desk ("Below it is a blank to sign your na
 
 | Address | What |
 |---|---|
-| `0x08F8CDF0` | Pointer to the keyboard's block while it's up (`0x0976D510` here). The slot is shared: after the keyboard it points at other screens' blocks, and for a frame as the screen changes at one that passes for it |
+| task `M_Name_KeyProc` | The keyboard is this task. Tasks are 0x54-byte entries named at +0 (`0x08F8CDB8` here), +0x30 and +0x34 their functions, +0x38 their data: the keyboard's block. While it runs, the run list (around `0x08F94B7C`) has an entry of its update function `0x08874E24`, 0, then the task. Entries move as other tasks come and go. A pool slot keeps its old contents after its task ends, so a fixed slot like `0x08F8CDF0` isn't enough to tell the keyboard is up |
 | block + 0x14 | State: 0 coming in (about 2 s), 1 typing, 3 after End ("Proceed?" and its Yes/No). No goes back to 1; Yes stays 3 until the block goes |
 | block + 0x1C, + 0x20 | The cursor's column (0-19, five a block) and row (0-5). Writing them moves it; the game works + 0x24 out again |
 | block + 0x24 | Its key: block * 30 + row * 5 + column in the block. + 0x28.. the same three again, + 0x34.. the previous |
 | `0x08C3BD90`, `0x08C3BD7C` | The first and last name: 8 letters of 16 bits each, `0x8080` a blank (`0xA180` A, `0xC180` a) |
 | `0x08C3BD74` | The text cursor: 0-7 the first name, 8-15 the last. L and R move it; Del blanks the letter under it |
+
+A letter's code is 0x80 then ASCII + 0x60 for letters, digits and most symbols; the minus, ×, ÷ and the middle dot
+have 0x82 first instead (`0x82AC`, `0x82AE`, `0x82B0`, `0x828A`, high byte first).
+
+Its animations, at 60 frames a second: coming in (state 0) the frame fades in over 8 frames, then each row
+fades in over 8, 11 apart from 16, and at 100 the cursor and the buttons that can be used light up. A row the
+cursor leaves goes from yellow back to blue over 36. Once the cursor has rested about 170 frames, a soft black
+disc (texture dump name `075839fcf519dff4`) pulses round the ball: from 30 to 44 PSP pixels and alpha 0 to
+0x7B over 60 frames, back over 60, gone for 60. L is lit unless the text cursor is at 0, R unless at 15; a
+button that can't be used is drawn with the same art 88 to the left and 33 down in the frame texture.
 
 End works only with a letter in each name (the start handler at `0x08875C14` counts blanks with `0x0887333C`).
 The keyboard's code is the task at `0x08874E24`. Its buttons are drawn by `jal 0x08873ECC` at `0x08875148`:

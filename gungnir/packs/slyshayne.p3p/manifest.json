@@ -20,9 +20,20 @@
     "trail_f0": { "state": 0.84 }, "trail_f1": { "state": 0.42 }, "trail_f2": { "state": 0.05 }, "trail_f3": { "state": 0 },
     "row": { "state": 0 },
     "dark_hour": { "state": 0 }, "dh_tint": { "state": 0 },
-    "kb_on": { "state": 0 }, "kb_page": { "state": 0 }, "kb_cur": { "state": 0 }, "kb_del": { "state": 0 }, "kb_end": { "state": 0 },
+    "kb_on": { "state": 0 }, "kb_page": { "state": 0 }, "kb_cur": { "state": 0 }, "kb_frame": { "state": 1 },
+    "kb_del": { "state": 0 }, "kb_l": { "state": 0 }, "kb_r": { "state": 0 }, "kb_end": { "state": 0 },
+    "kb_row0": { "state": 1 }, "kb_row1": { "state": 1 }, "kb_row2": { "state": 1 }, "kb_row3": { "state": 1 }, "kb_row4": { "state": 1 }, "kb_row5": { "state": 1 },
     "kb_bar_x": { "state": 0 }, "kb_bar_y": { "state": 0 }, "kb_ball_x": { "state": 0 }, "kb_ball_y": { "state": 0 },
-    "kb_key_x": { "state": 0 }, "kb_key_y": { "state": 0 }, "kb_dim": { "state": 0 }, "kb_in": { "state": 0 }, "kb_green": { "state": 0 }, "kb_out": { "state": 0 },
+    "kb_key_x": { "state": 0 }, "kb_key_y": { "state": 0 }, "kb_glow_s": { "state": 120 }, "kb_glow_op": { "state": 0 },
+    "kb_t0_x": { "state": 0 }, "kb_t0_y": { "state": 0 }, "kb_t0_op": { "state": 0 },
+    "kb_t1_x": { "state": 0 }, "kb_t1_y": { "state": 0 }, "kb_t1_op": { "state": 0 },
+    "kb_t2_x": { "state": 0 }, "kb_t2_y": { "state": 0 }, "kb_t2_op": { "state": 0 },
+    "kb_tc": { "state": -1 },
+    "kb_n0": { "state": -1 }, "kb_n1": { "state": -1 }, "kb_n2": { "state": -1 }, "kb_n3": { "state": -1 },
+    "kb_n4": { "state": -1 }, "kb_n5": { "state": -1 }, "kb_n6": { "state": -1 }, "kb_n7": { "state": -1 },
+    "kb_n8": { "state": -1 }, "kb_n9": { "state": -1 }, "kb_n10": { "state": -1 }, "kb_n11": { "state": -1 },
+    "kb_n12": { "state": -1 }, "kb_n13": { "state": -1 }, "kb_n14": { "state": -1 }, "kb_n15": { "state": -1 },
+    "kb_dim": { "state": 0 }, "kb_green": { "state": 0 }, "kb_out": { "state": 0 },
     "clk_on": { "state": 0 }, "clk_tint": { "state": 0 }, "clk_path": { "state": "M 0 0 Z" },
     "clk_x0": { "state": 0 }, "clk_y0": { "state": 0 }, "clk_r0": { "state": 0 }, "clk_v0": { "state": 0 },
     "clk_x1": { "state": 0 }, "clk_y1": { "state": 0 }, "clk_r1": { "state": 0 }, "clk_v1": { "state": 0 },
@@ -212,37 +223,57 @@
           { "type": "rect", "rect": [620, 0, 620, 1080], "visible": "screen == 'select'", "on_tap": { "call": "tap_pick", "args": [1] } },
         ] },
         // ---- The name keyboard (scripts/keyboard.lua), here instead of on the game's screen: the game's own, at 4x
-        // (assets/game/kb_*, built by gungnir/tools/p3p_keyboard.py), two blocks a page, the page buttons in the
-        // top corners. Tapping a key types it; Del, L, R and End press the game's buttons. It comes in over the
-        // Dark Hour green on the misty blue of the game's name screen, dims while the game asks "Proceed?", and
-        // goes to black with the game's screen once the name is taken.
+        // (assets/game/kb_*, built by gungnir/tools/p3p_keyboard.py), two blocks a page, under a copy of the name being
+        // written between the page buttons. Tapping a key types it; Del, L, R and End press the game's buttons, lit
+        // when the game would take them. It comes in over the Dark Hour green on the misty blue of the game's name
+        // screen, building up as the game's does (the frame, then each row); a row the cursor leaves fades back to
+        // blue, and the cursor's glow pulses while it rests. It dims while the game asks "Proceed?", and goes to
+        // black with the game's screen once the name is taken.
         { "type": "group", "rect": [0, 0, 1240, 1080], "visible": "kb_on", "children": [
           { "type": "image", "rect": [0, 0, 1240, 1080], "src": "assets/game/kb_bg.png", "fill": "stretch" },
-          { "type": "image", "rect": [96, 150, 1048, 608], "src": "assets/game/kb_page{kb_page}.png" },
+          { "type": "image", "rect": [96, 216, 1048, 608], "src": "assets/game/kb_frame{kb_page}.png", "opacity": "kb_frame" },
+          { "type": "group", "repeat": "6", "repeat_var": "r", "rect": [96, "312 + 64 * {r}", 1048, "{r} < 5 ? 64 : 96"], "clip": true,
+            "opacity": "kb_row{r}", "children": [
+            { "type": "image", "rect": [0, "-96 - 64 * {r}", 1048, 608], "src": "assets/game/kb_rows{kb_page}.png" },
+          ] },
+          // Rows the cursor has left, going back to blue under their letters.
+          { "type": "group", "repeat": "3", "repeat_var": "n", "rect": ["kb_t{n}_x", "kb_t{n}_y", 440, 76], "clip": true,
+            "visible": "kb_t{n}_op > 0", "children": [
+            { "type": "image", "rect": [0, 0, 440, 76], "src": "assets/game/kb_bar.png", "opacity": "kb_t{n}_op" },
+            { "type": "image", "rect": ["96 - kb_t{n}_x", "216 - kb_t{n}_y", 1048, 608], "src": "assets/game/kb_black{kb_page}.png" },
+          ] },
           { "type": "group", "rect": [0, 0, 1240, 1080], "visible": "kb_cur", "children": [
             { "type": "image", "rect": ["kb_bar_x", "kb_bar_y", 440, 76], "src": "assets/game/kb_bar.png" },
-            // Its row's letters over it, the ball, and the key under the cursor in white, as the game draws them.
+            // Its row's letters over it, the glow, the ball, and the key under the cursor in white, as the game draws them.
             { "type": "group", "rect": ["kb_bar_x", "kb_bar_y", 440, 76], "clip": true, "children": [
-              { "type": "image", "rect": ["96 - kb_bar_x", "150 - kb_bar_y", 1048, 608], "src": "assets/game/kb_black{kb_page}.png" },
+              { "type": "image", "rect": ["96 - kb_bar_x", "216 - kb_bar_y", 1048, 608], "src": "assets/game/kb_black{kb_page}.png" },
             ] },
+            { "type": "image", "rect": ["kb_ball_x + 46 - kb_glow_s / 2", "kb_ball_y + 46 - kb_glow_s / 2", "kb_glow_s", "kb_glow_s"],
+              "src": "assets/game/kb_glow.png", "fill": "stretch", "opacity": "kb_glow_op" },
             { "type": "image", "rect": ["kb_ball_x", "kb_ball_y", 92, 92], "src": "assets/game/kb_ball.png" },
             { "type": "group", "rect": ["kb_key_x", "kb_key_y", 68, 68], "clip": true, "children": [
-              { "type": "image", "rect": ["96 - kb_key_x", "150 - kb_key_y", 1048, 608], "src": "assets/game/kb_white{kb_page}.png" },
+              { "type": "image", "rect": ["96 - kb_key_x", "216 - kb_key_y", 1048, 608], "src": "assets/game/kb_white{kb_page}.png" },
             ] },
           ] },
           // The keys' rows on the page: 2 blocks of 6 rows of 5.
-          { "type": "group", "repeat": "2", "repeat_var": "b", "rect": ["176 + 440 * {b}", 254, 436, 384], "children": [
+          { "type": "group", "repeat": "2", "repeat_var": "b", "rect": ["176 + 440 * {b}", 320, 436, 384], "children": [
             { "type": "group", "repeat": "6", "repeat_var": "r", "rect": [0, "64 * {r}", 436, 64], "children": [
               { "type": "rect", "repeat": "5", "repeat_var": "c", "rect": ["87 * {c}", 0, 87, 64], "on_tap": { "call": "tap_key", "args": ["{b}", "{r}", "{c}"] } },
             ] },
           ] },
-          // The buttons, as the game's: Del and End dimmed while they can't be used.
-          { "type": "image", "rect": [82, 830, 216, 108], "src": "assets/game/kb_del_{=kb_del ? 'on' : 'off'}.png", "on_tap": { "call": "tap_kb_button", "args": ["circle"] } },
-          { "type": "image", "rect": [334, 840, 196, 88], "src": "assets/game/kb_l.png", "on_tap": { "call": "tap_kb_button", "args": ["l"] } },
-          { "type": "image", "rect": [566, 840, 196, 88], "src": "assets/game/kb_r.png", "on_tap": { "call": "tap_kb_button", "args": ["r"] } },
-          { "type": "image", "rect": [798, 830, 360, 108], "src": "assets/game/kb_end_{=kb_end ? 'on' : 'off'}.png", "on_tap": { "call": "tap_kb_button", "args": ["start"] } },
-          { "type": "image", "rect": [24, 40, 144, 88], "src": "assets/game/kb_prev.png", "on_tap": { "call": "tap_kb_page", "args": [-1] } },
-          { "type": "image", "rect": [1072, 40, 144, 88], "src": "assets/game/kb_next.png", "on_tap": { "call": "tap_kb_page", "args": [1] } },
+          // The name as the game lays it out: two lines of 8, each letter on its line, the text cursor under the
+          // letter it's on.
+          { "type": "image", "repeat": "16", "visible": "kb_n{i} >= 0", "rect": ["334 + 72 * ({i} % 8)", "40 + 80 * ({i} / 8)", 68, 68],
+            "src": "assets/game/kb_k{kb_n{i}}.png" },
+          { "type": "image", "visible": "kb_tc >= 0", "rect": ["336 + 72 * (kb_tc % 8)", "108 + 80 * (kb_tc / 8)", 64, 20], "src": "assets/game/kb_tcur.png" },
+          { "type": "rect", "repeat": "16", "rect": ["336 + 72 * ({i} % 8)", "112 + 80 * ({i} / 8)", 64, 4], "bg": "#7B8392" },
+          // The buttons, as the game's, lit when it would take them.
+          { "type": "image", "rect": [82, 852, 216, 108], "src": "assets/game/kb_del_{=kb_del ? 'on' : 'off'}.png", "on_tap": { "call": "tap_kb_button", "args": ["circle"] } },
+          { "type": "image", "rect": [334, 862, 196, 88], "src": "assets/game/kb_l_{=kb_l ? 'on' : 'off'}.png", "on_tap": { "call": "tap_kb_button", "args": ["l"] } },
+          { "type": "image", "rect": [566, 862, 196, 88], "src": "assets/game/kb_r_{=kb_r ? 'on' : 'off'}.png", "on_tap": { "call": "tap_kb_button", "args": ["r"] } },
+          { "type": "image", "rect": [798, 852, 360, 108], "src": "assets/game/kb_end_{=kb_end ? 'on' : 'off'}.png", "on_tap": { "call": "tap_kb_button", "args": ["start"] } },
+          { "type": "image", "rect": [24, 74, 144, 88], "src": "assets/game/kb_prev.png", "on_tap": { "call": "tap_kb_page", "args": [-1] } },
+          { "type": "image", "rect": [1072, 74, 144, 88], "src": "assets/game/kb_next.png", "on_tap": { "call": "tap_kb_page", "args": [1] } },
           // Dimmed while the game asks, the green it came in over going, and black as the game's screen goes.
           { "type": "rect", "rect": [0, 0, 1240, 1080], "bg": "#000000", "opacity": "kb_dim" },
           { "type": "rect", "rect": [0, 0, 1240, 1080], "bg": "#001400", "opacity": "kb_green" },
