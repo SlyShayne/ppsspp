@@ -155,6 +155,28 @@ early in it (before midnight) and still on in the green scenes after. After the 
 black about 58 frames, then fades the green station in over about 38. Game flag n is bit `n & 31` of the word at
 `0x08E68298 + (n >> 5) * 4`; the pack reads it with `gameFlag()` in `scripts/main.lua`.
 
+## The name keyboard
+
+Seen on the first night at the dorm's desk ("Below it is a blank to sign your name..."). Four blocks of 5 x 6 keys
+(A-Z, a-z, 0-9, symbols), then Del (circle), OK (cross), L, R (the text cursor) and End (start).
+
+| Address | What |
+|---|---|
+| `0x08F8CDF0` | Pointer to the keyboard's block while it's up (`0x0976D510` here). The slot is shared: after the keyboard it points at other screens' blocks, and for a frame as the screen changes at one that passes for it |
+| block + 0x14 | State: 0 coming in (about 2 s), 1 typing, 3 after End ("Proceed?" and its Yes/No). No goes back to 1; Yes stays 3 until the block goes |
+| block + 0x1C, + 0x20 | The cursor's column (0-19, five a block) and row (0-5). Writing them moves it; the game works + 0x24 out again |
+| block + 0x24 | Its key: block * 30 + row * 5 + column in the block. + 0x28.. the same three again, + 0x34.. the previous |
+| `0x08C3BD90`, `0x08C3BD7C` | The first and last name: 8 letters of 16 bits each, `0x8080` a blank (`0xA180` A, `0xC180` a) |
+| `0x08C3BD74` | The text cursor: 0-7 the first name, 8-15 the last. L and R move it; Del blanks the letter under it |
+
+End works only with a letter in each name (the start handler at `0x08875C14` counts blanks with `0x0887333C`).
+The keyboard's code is the task at `0x08874E24`. Its buttons are drawn by `jal 0x08873ECC` at `0x08875148`:
+`nop` there leaves everything else, including the name's underlines and text cursor, which use the buttons'
+icon texture. Its frame, font atlas and cursor ball are textures of their own (PPSSPP dump names, less the
+address: `761e13dcd727d831`, `d71abe705af2670d`, `7be1e7f570d06089`), so making those transparent hides the
+rest. After Yes the screen fades to black about 12 frames after the choice closes, over 72, then holds black
+about 40 more before the next scene fades in.
+
 ## Draw lists (not state)
 
 `0x08D60000`–`0x08D80000` and its double buffer `0x08DB0000`–`0x08DD0000` hold the game's per-frame

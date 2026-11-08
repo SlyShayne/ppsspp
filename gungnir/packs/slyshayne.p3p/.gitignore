@@ -1,3 +1,5 @@
 # The game's own title art, built from your own dump with gungnir/tools/p3p_assets.py.
 assets/game/
 psp_textures/*.png
+# Blanks that hide the name keyboard on the game's screen: not the game's art.
+!psp_textures/kb_blank_*.png
