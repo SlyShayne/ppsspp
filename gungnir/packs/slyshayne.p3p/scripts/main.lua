@@ -108,6 +108,7 @@ end
 -- Each Orpheus's offsets at the select: where the game last had it back and forward ({ back, front }).
 local reach = {}
 local stateSince = {}  -- the frame the select first reached each state
+local chosen = nil     -- the protagonist chosen (0 him, 1 her), from state 7 on
 
 local function rawFloat(address)
     local x = string.unpack("<f", string.pack("<I4", mem.u32(address)))
@@ -142,7 +143,13 @@ local function select()
     -- dialogue), but from the choice on each goes between where the game last had it back and where it last
     -- had it forward, on the hover, so the one going back moves with the one coming forward (the game jumps
     -- it there, hidden by its flat colour).
-    local cursor = mem.u32(SEL_CURSOR)
+    -- The protagonist under the cursor: the word's low half (the difficulty list keeps its own cursor in the
+    -- high half), and from the choice on, the one chosen then, whatever the cursor does after.
+    local cursor = mem.u32(SEL_CURSOR) & 0xFFFF
+    if state >= SEL_CHOSEN then
+        chosen = chosen or cursor
+        cursor = chosen
+    end
     local function forward(side, address, weight)
         local at = SCALE_X * rawFloat(address)
         if state < 5 then
@@ -350,6 +357,7 @@ function update(info)
         whiteStart = nil
         reach = {}
         stateSince = {}
+        chosen = nil
     end
     -- Config is on this screen instead: zero its opacity on the game's, each frame, which hides all of it
     -- and leaves the title behind (its taps and buttons work as before). Its object is checked from when
