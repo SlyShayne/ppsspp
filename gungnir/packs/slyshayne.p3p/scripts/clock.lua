@@ -20,6 +20,9 @@ local NUMERAL_W, NUMERAL_H = 124, 68
 -- The green the game turns the screen at midnight, and the zoom over which it fades back to black
 -- (measured: its alpha falls from full at zoom 2.79 to none at 4.03).
 local TINT_FADE = { 2.79, 4.03 }
+-- At midnight the green comes in over about 22 frames, fast then slowing (measured on the game's screen).
+local TINT_IN = 22
+local midnightSince = nil  -- the frame it turned midnight
 
 local ok, shapes = pcall(pack.require, "assets/game/clock_shapes")
 if not ok then
@@ -55,19 +58,23 @@ local function records()
     return out
 end
 
--- Publishes the clock's values; false while there's none.
-function M.update(publish)
+-- Publishes the clock's values; false while there's none. [frame] is the game frame.
+function M.update(publish, frame)
     local recs = shapes and records()
     if not recs then
+        midnightSince = nil
         publish("clk_on", 0)
         return false
     end
     publish("clk_on", 1)
-    -- Green from midnight (the hands at 360, or the burst begun), fading out as the pieces leave.
+    -- Green from midnight (the hands at 360, or the burst begun), coming in eased, fading out as the pieces leave.
     local zoom = recs[0].zoom
     local midnight = recs[0].step > 0 or (recs[0].ang >= 359.99 and recs[1].ang >= 359.99 and recs[2].ang >= 359.99)
+    if midnight then midnightSince = midnightSince or frame else midnightSince = nil end
+    local into = midnightSince and math.min(1, (frame - midnightSince) / TINT_IN) or 0
+    into = 1 - (1 - into) * (1 - into)
     local fade = math.min(1, math.max(0, (zoom - TINT_FADE[1]) / (TINT_FADE[2] - TINT_FADE[1])))
-    publish("clk_tint", midnight and 1 - fade or 0)
+    publish("clk_tint", into * (1 - fade))
     -- The filled pieces, as one path in this screen's pixels; those wholly off it are left out.
     local parts = {}
     for _, piece in ipairs(shapes.pieces) do

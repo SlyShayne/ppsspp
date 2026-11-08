@@ -351,7 +351,7 @@ function update(info)
     frame = info.frame
     patchChoices()
     choice()
-    clock.update(publish)
+    clock.update(publish, frame)
     local phase = mem.u32(TITLE_PHASE)
     local s = screenFor(phase)
     -- Between the title going and the select's object coming (about 8 frames), stay black.
