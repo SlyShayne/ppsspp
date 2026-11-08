@@ -73,7 +73,7 @@ it runs the "Welcome to the world of P3P" dialogue and then the choice.
 |---|---|---|
 | `0x09363AD0` | The select's object: first word (allocation size) | 0xC0; it points to itself at +0x1C (check both, as with Config) |
 | `0x09363B00` (+0x30) | The choice's fade-in | 0 → 0xFF over its 10 game frames |
-| `0x09363B04` (+0x34) | State | 1, 2, 3 the dialogue, 4 the choice appearing, 5 choosing |
+| `0x09363B04` (+0x34) | State | 1, 2, 3 the dialogue, 4 the choice appearing, 5 choosing, 6 its question, 7 one chosen (the other portrait slides off its side as the box finishes closing, 15 PSP px a 60 Hz frame, straight), 8 to 10 the difficulty (10 its question), 11 confirmed (the screen fades to black, straight, in about 58 frames), 12 "Now, please enjoy the game." |
 | `0x09363B08` (+0x38) | Cursor | 0 the male protagonist, 1 the female |
 | `0x09363B0C`, `0x09363B10` | Floats, him then her: how far forward (toward the middle) each portrait is, in PSP px | -10 each through the dialogue; as the choice appears he eases to 5, then 9.2 while hovered and -28.8 while not (she stays at -10 until first switched to) |
 | `0x09363B14` (+0x44) | Float: the hover | 0 him, 1 her, eased (1 − cos) over 10 game frames as the cursor moves; also 1 → 0 as the choice appears |

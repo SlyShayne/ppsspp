@@ -29,6 +29,13 @@ local SEL_HOVER   = SEL_OBJECT + 0x44  -- float: 0 him, 1 her, eased over 10 gam
 -- hovered and -29.3 while not, eased as the cursor moves.
 local SEL_OFFSETS = SEL_OBJECT + 0x3C
 local SCALE_X = 4  -- this screen's pixels per PSP pixel
+-- After the choice: 6 its question, 7 one chosen (the other portrait slides off its side, 15 PSP px a frame,
+-- straight), 8 to 10 the difficulty, 11 it confirmed (the game's screen fades to black, straight, in about
+-- 58 frames), 12 on.
+local SEL_CHOSEN = 7
+local SEL_CONFIRMED = 11
+local SLIDE_OUT = 15 * 4  -- this screen's pixels a frame
+local STORY_FADE = { 0, 58 }
 -- After NEW GAME, frames: black as the title fades out (phases 10, 11, 20 last ~36); then white as the
 -- game's screen fades back in, measured from the select's state 2 (it holds black, then fades).
 local BLACK_FADE = { 0, 34 }
@@ -100,6 +107,7 @@ end
 
 -- Each Orpheus's offsets at the select: where the game last had it back and forward ({ back, front }).
 local reach = {}
+local stateSince = {}  -- the frame the select first reached each state
 
 local function rawFloat(address)
     local x = string.unpack("<f", string.pack("<I4", mem.u32(address)))
@@ -114,10 +122,13 @@ end
 -- off again the other way. Both move together, on the game's eased hover (0 him, 1 her).
 local function select()
     local state = mem.u32(SEL_STATE)
-    -- Black, then the scene as the game's screen fades in from black (timed from state 2's start).
+    if not stateSince[state] then stateSince[state] = frame end
+    -- Black, then the scene as the game's screen fades in from black (timed from state 2's start); and black
+    -- again as the difficulty is confirmed and the game's screen fades out (state 11).
     if state == 2 and not whiteStart then whiteStart = frame end
     local white = whiteStart and ramp(frame - whiteStart, WHITE_FADE) or (state >= 3 and 1 or 0)
-    publish("white", white)
+    local out = state >= SEL_CONFIRMED and ramp(frame - stateSince[SEL_CONFIRMED], STORY_FADE) or 0
+    publish("shade", math.max(1 - white, out))
     local x = float(SEL_HOVER)
     local himFlat, herFlat = 0, 0
     if state == 4 then
@@ -143,8 +154,14 @@ local function select()
         reach[side] = r
         return r.back + (r.front - r.back) * weight
     end
-    publish("him_dx", forward("him", SEL_OFFSETS, 1 - x))
-    publish("her_dx", forward("her", SEL_OFFSETS + 4, x))
+    local him, her = forward("him", SEL_OFFSETS, 1 - x), forward("her", SEL_OFFSETS + 4, x)
+    -- Once one is chosen (state 7), the other slides off its side at the game's speed, its colour with it.
+    if state >= SEL_CHOSEN then
+        local gone = math.min(SLIDE_OUT * (frame - stateSince[SEL_CHOSEN]), 2000)
+        if cursor == 0 then her = her - gone else him = him - gone end
+    end
+    publish("him_dx", him)
+    publish("her_dx", her)
     -- Each Orpheus's trail, like the portraits' on the game's screen: TRAIL_COPIES silhouettes drift away
     -- one spacing every TRAIL_PERIOD frames, blending into the background as they go (gone by the last
     -- spacing), while a new one comes out from behind. Copy i is drawn farthest first.
@@ -332,6 +349,7 @@ function update(info)
     if s ~= "select" then
         whiteStart = nil
         reach = {}
+        stateSince = {}
     end
     -- Config is on this screen instead: zero its opacity on the game's, each frame, which hides all of it
     -- and leaves the title behind (its taps and buttons work as before). Its object is checked from when
@@ -352,8 +370,7 @@ function update(info)
     publish("breath", breath())
     publish("busy", frame < busyUntil and 1 or 0)
     if s == "newgame" then
-        publish("black", ramp(frame - blackStart, BLACK_FADE))
-        publish("white", 0)
+        publish("shade", ramp(frame - blackStart, BLACK_FADE))
     elseif s == "select" then
         select()
     end

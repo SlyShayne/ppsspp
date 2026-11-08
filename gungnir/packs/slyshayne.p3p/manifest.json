@@ -15,7 +15,7 @@
     "female_op": { "state": 1 }, "male_op": { "state": 0 }, "female_dx": { "state": 0 }, "male_dx": { "state": 0 },
     "cursor": { "state": 1 }, "pill": { "state": 1 }, "menu_op": { "state": 1 },
     "cfg_panel": { "state": 1 }, "cfg_rows": { "state": 1 },
-    "black": { "state": 0 }, "white": { "state": 0 }, "him_flat": { "state": 0 }, "her_flat": { "state": 0 }, "him_dx": { "state": 0 }, "her_dx": { "state": 0 },
+    "shade": { "state": 0 }, "him_flat": { "state": 0 }, "her_flat": { "state": 0 }, "him_dx": { "state": 0 }, "her_dx": { "state": 0 },
     "trail_d0": { "state": 3 }, "trail_d1": { "state": 2 }, "trail_d2": { "state": 1 }, "trail_d3": { "state": 0 },
     "trail_f0": { "state": 0.84 }, "trail_f1": { "state": 0.42 }, "trail_f2": { "state": 0.05 }, "trail_f3": { "state": 0 },
     "row": { "state": 0 },
@@ -148,10 +148,9 @@
         // smooth (gungnir/tools/p3p_assets.py scales them). A trail of copies runs outward from each in colour;
         // the one not hovered goes flat in its colour, from the middle out, its trail drawn in.
         { "type": "group", "rect": [0, 0, 1240, 1080], "visible": "screen == 'newgame' || screen == 'select'", "children": [
-          { "type": "rect", "rect": [0, 0, 1240, 1080], "bg": "#000000", "opacity": "screen == 'select' ? 1 : black" },
-          { "type": "group", "rect": [0, 0, 1240, 1080], "opacity": "white", "children": [
+          { "type": "group", "rect": [0, 0, 1240, 1080], "visible": "screen == 'select'", "children": [
             { "type": "rect", "rect": [0, 0, 1240, 1080], "bg": "#FFFFFF" },
-            { "type": "group", "rect": [0, 0, 1240, 1080], "visible": "screen == 'select'", "children": [
+            { "type": "group", "rect": [0, 0, 1240, 1080], "children": [
               // Each colour from its edge to a line through its Orpheus, from where the figure touches the top to a
               // foot (gungnir/tools/p3p_assets.py prints the points, in the picture's own pixels), and white masks
               // the other side of the line over the trails, so neither shows a seam.
@@ -186,6 +185,9 @@
               ] },
             ] },
           ] },
+          // Black over it all, fading as the game's screen does: in as the title goes, out as the select comes in,
+          // and in again as the story begins. One layer, so nothing under it shows through anything else.
+          { "type": "rect", "rect": [0, 0, 1240, 1080], "bg": "#000000", "opacity": "shade" },
           // Taps: his half and hers (hover, then choose).
           { "type": "rect", "rect": [0, 0, 620, 1080], "visible": "screen == 'select'", "on_tap": { "call": "tap_pick", "args": [0] } },
           { "type": "rect", "rect": [620, 0, 620, 1080], "visible": "screen == 'select'", "on_tap": { "call": "tap_pick", "args": [1] } },
