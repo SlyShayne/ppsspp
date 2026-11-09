@@ -35,6 +35,8 @@ HEADSHOT = 128   # px, the Persona panel's picture
 CARD = (176, 220)   # px, the link details' card and person
 CARD_SMALL = (56, 72)
 KANJI_SCALE = 3  # the kanji beside the social stats, a little smaller than the screen's 4x
+PORTRAIT_SCALE = 2.5  # the protagonist beside a choice they make
+PORTRAIT_BLINK_Y = 36
 # The menus' atlas (texture dump names less the address): the moods' disc and faces, the stats' kanji. Each piece
 # is (u0, v0, u1, v1), placed at (x, y) in PSP pixels as the game draws it, in its colour (RGB, alpha).
 ATLAS = "d5c9ffce74e8c8c4"
@@ -199,7 +201,35 @@ def archive_art(dst, cpk):
             im = im.crop(im.getchannel("A").getbbox())
             fit(im, CARD).save(os.path.join(dst, "bust_%d.png" % num))
             busts += 1
-    print("wrote %d Persona headshots, %d cards and %d people" % (n, cards, busts))
+    # The protagonists' bust-ups (data/bustup/b<character>_<outfit>.bin: a 256x256 TMX, then a 256x64 one, the
+    # top of the face with its eyes shut, which goes PORTRAIT_BLINK_Y down it), for a choice they make:
+    # port_<character>_<outfit>.png and _b.png.
+    ports = 0
+    for c in (1, 99):
+        prefix = "data/bustup/b%d_" % c
+        for name in idx:
+            if not (name.startswith(prefix) and name.endswith(".bin")):
+                continue
+            d = cpk_read(cpk, idx[name])
+            at = [i - 8 for i in _find_all(d, b"TMX0")]
+            if len(at) < 2:
+                continue
+            outfit = name[len(prefix):-len(".bin")]
+            base = cleaned(tmx(d[at[0]:]))
+            shut = cleaned(tmx(d[at[1]:]))
+            size = round(256 * PORTRAIT_SCALE)
+            smooth(base, (size, size)).save(os.path.join(dst, "port_%d_%s.png" % (c, outfit)))
+            smooth(shut, (size, round(64 * PORTRAIT_SCALE))).save(os.path.join(dst, "port_%d_%s_b.png" % (c, outfit)))
+            ports += 1
+    print("wrote %d Persona headshots, %d cards, %d people and %d protagonist portraits" % (n, cards, busts, ports))
+
+
+def _find_all(data, word):
+    out, i = [], data.find(word)
+    while i >= 0:
+        out.append(i)
+        i = data.find(word, i + 1)
+    return out
 
 
 # --- the menus' atlases ------------------------------------------------------------------------------------

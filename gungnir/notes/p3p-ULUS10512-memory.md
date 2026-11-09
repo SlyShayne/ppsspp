@@ -113,7 +113,8 @@ ones). Static data, the same in every scene.
 | window + 0x4 | The scene's message file (`MSG1`, Atlus BMD: a table of type/pointer pairs, type 1 a choice such as `msg_YN`) |
 | window + 0x1C | The message being shown |
 | window + 0x20, + 0x40 | The conversation text's and the options' layout: runs of glyphs. A run's +0x8 is its line's y (options sort by it), +0x18 its glyph count, +0x1C its first glyph, +0x24 the next run. A glyph's +0x0 (u16) is its letter (ASCII, and `0x83F6` a space), +0x10 its colour as RRGGBBAA, +0x28 the next glyph |
-| window + 0x48 (u16) | How many options |
+| window + 0x48 (u16) | How many options in a plain box (in the protagonist's own box it isn't: there + 0x4E counts them) |
+| window + 0x52 (u16) | Set (a frame or so after the box opens) when the choice is the protagonist's: the box drawn with their portrait in it (+0x54, +0x56 0x0D and 3 in Mitsuru's "Talk / Check everyone's status / Go to Tartarus tonight / Done") |
 | window + 0x4A, + 0x4C (u16) | The cursor. Writing both moves it; the highlight follows |
 | `0x08E68298` | Game flags: flag n is bit n & 31 of the word at + (n >> 5) * 4 (`0x0880C150`). Flag `0x1007` (bit 7 of `0x08E68498`) is the female protagonist |
 
@@ -130,6 +131,16 @@ choice working with nothing of it drawn. The box: 272 x (14 + 21 per option) PSP
 options, both from its bottom edge. An opaque `#C7D0C9` rim, 5 px wide (11 at the right, 7 at the
 bottom), round a panel of the same colour at about 90% opacity (`#CDD5CF` over white, `#B6BEB8` over
 near-black); the bar 250 x 20 from 8 px in; an 8 px shadow below.
+
+The protagonist's own box (with their portrait) is drawn in the same window code at `0x0898C024`/`0x0898C118`
+(the box, `jal 0x0898973C`), `0x0898C068`/`0x0898C15C` (the bar, `jal 0x08989828`) and `0x0898C0CC`/`0x0898C1C0`
+(the portrait, `jal 0x08989928`, its only callers). The portrait is the STATUS screen's art (texture
+`096e1650...`, drawn once with a silhouette palette tinted `#428AFF` 10 px off, then in colour); it doesn't blink.
+
+Bust-ups are `data/bustup/b<character>_<outfit>.bin` (the protagonist 1, the female protagonist 99): a 256x256
+TMX, then a 256x64 one, the top of the face with the eyes shut, which goes 36 px down it. His outfits: 1_1 summer
+uniform, 1_2 summer clothes, 1_3 winter uniform, 1_4 winter coat, 21_0 yukata, 81_0 bare. The bust-ups loaded
+are named in slots 0x21C apart from `0x08C3F388` ("bustup/b1_1_3.bin" on 4/22 in the dorm).
 
 ## The Dark Hour clock
 

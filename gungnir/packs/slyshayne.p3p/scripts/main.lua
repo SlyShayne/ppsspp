@@ -300,11 +300,62 @@ local CHOICE_PATCHES = {
     { 0x0898B848, 0x0E2625CF, 0x00000000 },  -- jal 0x0898973C, the box as it opens: nothing
     { 0x0898B644, 0x0E2625CF, 0x00000000 },  -- jal 0x0898973C, the box as it closes: nothing
     { 0x0898B688, 0x0E26260A, 0x00000000 },  -- jal 0x08989828, its bar as it closes: nothing
+    -- The box with the protagonist's portrait in it (a choice the protagonist makes, such as Mitsuru's "Talk /
+    -- Check everyone's status / ..."): its box, bar and portrait, in both its branches.
+    { 0x0898C024, 0x0E2625CF, 0x00000000 },
+    { 0x0898C068, 0x0E26260A, 0x00000000 },
+    { 0x0898C0CC, 0x0E26264A, 0x00000000 },  -- jal 0x08989928, the portrait
+    { 0x0898C118, 0x0E2625CF, 0x00000000 },
+    { 0x0898C15C, 0x0E26260A, 0x00000000 },
+    { 0x0898C1C0, 0x0E26264A, 0x00000000 },
 }
 
 local choiceWindow = nil  -- the window asking, if one is
 local choiceSince = nil   -- the frame its box started opening here
 local choiceGone = nil    -- the frame it stopped asking, while its box closes here
+local choiceN = 2
+-- A choice the protagonist makes shows them beside it (the window's +0x52 is set; its +0x4E counts the options).
+-- Here they slide and fade in from the right behind the box as it opens, and back out as it closes, in the
+-- bust-up of the outfit they're wearing: the one the game has loaded (its bust-up slots, 0x21C apart from
+-- BUSTUP_SLOTS, hold "bustup/b<character>_<outfit>.bin"), else the season's uniform.
+local WIN_PORTRAIT, WIN_COUNT = 0x52, 0x4E
+local BUSTUP_SLOTS, BUSTUP_SLOT, BUSTUP_COUNT = 0x08C3F388, 0x21C, 8
+local OUTFITS = { ["1_1"] = true, ["1_2"] = true, ["1_3"] = true, ["1_4"] = true, ["11_0"] = true,
+    ["21_0"] = true, ["61_0"] = true, ["81_0"] = true }
+local choicePortrait = false
+local portraitGone = nil
+local PORTRAIT_IN, PORTRAIT_OUT = 18, 16  -- frames to slide in (easing out) and out (easing in)
+-- Blinking: every 2.5 to 6 s (now and then twice), the eyes half shut, shut, half shut, open: frames from its
+-- start for each step.
+local BLINK = { 3, 7, 10 }
+local nextBlink, blinkAt = 0, nil
+
+local function protagonistOutfit(female)
+    local c = female and "b99_" or "b1_"
+    for k = 0, BUSTUP_COUNT - 1 do
+        local s = mem.read(BUSTUP_SLOTS + BUSTUP_SLOT * k, 32):match("^[^%z]*")
+        local outfit = s:match("bustup/" .. c .. "([%d]+_[%d]+)%.bin")
+        if outfit and OUTFITS[outfit] then return outfit end
+    end
+    local day = mem.u16(0x08E64820)
+    local summer = day >= 61 and day < 183  -- June to September: the summer uniform
+    return summer and "1_1" or "1_3"
+end
+
+local function blink()
+    if frame >= nextBlink and not blinkAt then
+        blinkAt = frame
+    end
+    local v = 0
+    if blinkAt then
+        local t = frame - blinkAt
+        if t < BLINK[1] then v = 0.5 elseif t < BLINK[2] then v = 1 elseif t < BLINK[3] then v = 0.5 else
+            blinkAt = nil
+            nextBlink = frame + (math.random() < 0.2 and 8 or math.random(150, 360))
+        end
+    end
+    publish("ch_blink", v)
+end
 
 local function ram(a)
     return a >= 0x08800000 and a < 0x0A000000
@@ -363,19 +414,36 @@ local function choice()
     choiceWindow = w
     if not w then
         -- Closing: the box shrinks as it was last shown, bar and all, without its text.
-        if choiceSince then choiceGone, choiceSince = frame, nil end
+        if choiceSince then choiceGone, portraitGone, choiceSince = frame, frame, nil end
         local left = choiceGone and 1 - ramp(frame - choiceGone, { 0, CHOICE_CLOSE }) or 0
         if left == 0 then choiceGone = nil end
+        local out = portraitGone and ramp(frame - portraitGone, { 0, PORTRAIT_OUT }) or 1
+        if out >= 1 then choicePortrait, portraitGone = false, nil end
         publish("ch_open", left)
         publish("ch_text", 0)
+        publish("ch_port", choicePortrait and 1 or 0)
+        publish("ch_pt", 1 - out * out)
+        if choicePortrait then blink() end
         return
     end
-    choiceSince = choiceSince or frame
-    choiceGone = nil
-    local n = math.min(mem.u16(w + 0x48), CHOICE_MAX)
-    local cursor = mem.u16(w + 0x4A)
     local female = (mem.u32(FEMALE_FLAGS) >> 7) & 1 == 1
+    if not choiceSince then
+        choiceSince = frame
+        choicePortrait = mem.u16(w + WIN_PORTRAIT) ~= 0
+        publish("ch_who", (female and "99_" or "1_") .. protagonistOutfit(female))
+        nextBlink, blinkAt = frame + math.random(60, 200), nil
+    end
+    choiceGone = nil
+    if mem.u16(w + WIN_PORTRAIT) ~= 0 then choicePortrait = true end  -- set a frame or so after it opens
+    local cursor = mem.u16(w + 0x4A)
     local lines = options(w)
+    local n = math.min(#lines > 0 and #lines or mem.u16(w + WIN_COUNT), CHOICE_MAX)
+    choiceN = n
+    portraitGone = nil
+    local pin = ramp(frame - choiceSince, { 0, PORTRAIT_IN })
+    publish("ch_pt", 1 - (1 - pin) * (1 - pin))
+    publish("ch_port", choicePortrait and 1 or 0)
+    if choicePortrait then blink() end
     local open = ramp(frame - choiceSince, { 0, CHOICE_OPEN })
     publish("ch_open", math.sin(open * math.pi / 2))
     publish("ch_text", open >= 1 and 1 or 0)
@@ -532,7 +600,7 @@ end
 function tap_choice(i)
     i = tonumber(i)
     local w = choiceWindow
-    if not w or w ~= askingWindow() or i >= mem.u16(w + 0x48) or not begin() then return false end
+    if not w or w ~= askingWindow() or i >= choiceN or not begin() then return false end
     if mem.u16(w + 0x4A) == i then
         input.press("cross", HOLD)
         finish(HOLD)

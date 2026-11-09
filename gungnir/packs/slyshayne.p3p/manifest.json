@@ -94,6 +94,7 @@
     "clk_x9": { "state": 0 }, "clk_y9": { "state": 0 }, "clk_r9": { "state": 0 }, "clk_v9": { "state": 0 },
     "clk_x10": { "state": 0 }, "clk_y10": { "state": 0 }, "clk_r10": { "state": 0 }, "clk_v10": { "state": 0 },
     "clk_x11": { "state": 0 }, "clk_y11": { "state": 0 }, "clk_r11": { "state": 0 }, "clk_v11": { "state": 0 },
+    "ch_port": { "state": 0 }, "ch_pt": { "state": 0 }, "ch_who": { "state": "1_1_3" }, "ch_blink": { "state": 0 },
     "ch_open": { "state": 0 }, "ch_text": { "state": 0 }, "ch_n": { "state": 2 }, "ch_cursor": { "state": 0 }, "ch_bar": { "state": "#428AFF" },
     "ch_t0": { "state": "" }, "ch_t1": { "state": "" }, "ch_t2": { "state": "" }, "ch_t3": { "state": "" },
     "ch_t4": { "state": "" }, "ch_t5": { "state": "" }, "ch_t6": { "state": "" }, "ch_t7": { "state": "" },
@@ -456,6 +457,14 @@
         // cursor to it; tapping the one it's on chooses it.
         // Whatever is under it fades back as the choice opens (the name keyboard dims itself for its question).
         { "type": "rect", "rect": [0, 0, 1240, 1080], "bg": "#000000", "opacity": "0.45 * ch_open", "visible": "ch_open > 0 && kb_dim == 0" },
+        // A choice the protagonist makes: they slide and fade in from the right behind the box as it opens, and
+        // back out as it closes, in the outfit they're wearing (assets/game/port_*, gungnir/tools/p3p_home.py),
+        // blinking now and then (the top of their face with the eyes shut, laid over it).
+        { "type": "group", "rect": ["640 + 300 * (1 - ch_pt)", "380 - 3 * (60 + 84 * ch_n) / 4", 640, 640],
+          "visible": "ch_port && ch_pt > 0", "opacity": "ch_pt", "children": [
+          { "type": "image", "rect": [0, 0, 640, 640], "src": "assets/game/port_{ch_who}.png" },
+          { "type": "image", "rect": [0, 90, 640, 160], "src": "assets/game/port_{ch_who}_b.png", "opacity": "ch_blink", "visible": "ch_blink > 0" },
+        ] },
         { "type": "group", "rect": [76, "810 - 3 * (60 + 84 * ch_n) / 4", 1088, "60 + 84 * ch_n"], "visible": "ch_open > 0",
           "scale_y": "ch_open", "origin": [0.5, 1], "children": [
           { "type": "rect", "rect": [0, "40 + 84 * ch_n", 1088, 28], "bg": "#48000000", "radius": 16 },

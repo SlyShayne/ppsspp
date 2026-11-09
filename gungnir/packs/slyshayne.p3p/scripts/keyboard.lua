@@ -10,7 +10,9 @@
 -- five a block), +0x20 its row (0-5).
 local M = {}
 
-local RUN_LIST, RUN_LIST_SIZE = 0x08F90000, 0x10000
+-- The run list's entries lie round 0x08F94B7C; 16 KiB about it are searched, every 30 frames while the keyboard
+-- isn't up (the script's budget is small).
+local RUN_LIST, RUN_LIST_SIZE = 0x08F93000, 0x4000
 local UPDATE = 0x08874E24
 local TASK_NAME = "M_Name_KeyProc"
 local TASK_DATA = 0x38
@@ -93,9 +95,9 @@ end
 local function find()
     if not (runEntry and mem.u32(runEntry) == UPDATE and isTask(mem.u32(runEntry + 8))) then
         -- The run list's entries move as other tasks come and go (the question's windows): look again at once
-        -- while the keyboard's up, otherwise every 15 frames.
+        -- while the keyboard's up, otherwise every 30 frames.
         runEntry = nil
-        if not since and frame % 15 ~= 0 then return nil end
+        if not since and frame % 30 ~= 0 then return nil end
         local data = mem.read(RUN_LIST, RUN_LIST_SIZE)
         local word = string.pack("<I4", UPDATE)
         local at = 1
