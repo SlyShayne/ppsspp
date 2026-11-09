@@ -31,7 +31,9 @@ SCALE = 4
 COLOURS = {"ink0": (0x0B, 0x24, 0x40), "ink1": (0x5C, 0x0B, 0x24), "acc0": (0x1E, 0x6F, 0xD8),
            "acc1": (0xD0, 0x30, 0x6A), "gold": (0xF5, 0xB6, 0x30), "white": (0xFF, 0xFF, 0xFF),
            "red": (0xB0, 0x10, 0x2A), "blue": (0x12, 0x36, 0xC8)}  # the calendar's Sundays and Saturdays
-HEADSHOT = 128   # px, the Persona panel's picture
+HEADSHOT = (220, 164)   # px, the Persona panel's picture: the panel's height, at its right end
+HEADSHOT_FADE = 0.55    # of its width, from the left, over which it fades in
+PANEL_RADIUS = 12       # the panel's corners, which its right ones follow
 CARD = (176, 220)   # px, the link details' card and person
 CARD_SMALL = (56, 72)
 KANJI_SCALE = 3  # the kanji beside the social stats, a little smaller than the screen's 4x
@@ -150,10 +152,10 @@ def fit(im, box):
 
 
 def headshot(im):
-    """A square round the Persona's head: from the top of its body (the figure with thin parts such as staffs,
-    horns and strings worn away), a side of 40% of the body's height (at most its width), centred on where the
-    body is in that band."""
-    from PIL import ImageFilter
+    """The Persona's head, for the panel's right end: a band 40% of the body's height (at most its width) from
+    the top of its body (the figure with thin parts such as staffs, horns and strings worn away), widened to the
+    panel's shape with the head right of the middle, fading in from the left."""
+    from PIL import ImageChops, ImageDraw, ImageFilter
     im = cleaned(im)
     a = im.getchannel("A").point(lambda v: 255 if v > 40 else 0).filter(ImageFilter.MinFilter(11))
     box = a.getbbox() or im.getchannel("A").getbbox()
@@ -165,11 +167,24 @@ def headshot(im):
     cols = [sum(band.crop((x, 0, x + 1, side)).getdata()) for x in range(band.width)]
     total = sum(cols) or 1
     cx = x0 + sum(i * c for i, c in enumerate(cols)) / total
-    left = round(cx - side / 2)
+    hw, hh = HEADSHOT
+    width = round(side * hw / hh)
+    left = round(cx - width * 0.6)
     top = y0 - round(side * 0.06)
-    square = Image.new("RGBA", (side, side), (0, 0, 0, 0))
-    square.alpha_composite(im.crop((left, top, left + side, top + side)))
-    return smooth(square, (HEADSHOT, HEADSHOT))
+    pic = Image.new("RGBA", (width, side), (0, 0, 0, 0))
+    pic.alpha_composite(im.crop((left, top, left + width, top + side)))
+    pic = smooth(pic, HEADSHOT)
+    fade = Image.new("L", HEADSHOT, 255)
+    span = hw * HEADSHOT_FADE
+    for x in range(int(span)):
+        t = x / span
+        fade.paste(round(255 * t * t * (3 - 2 * t)), (x, 0, x + 1, hh))
+    corners = Image.new("L", (hw * 4, hh * 4), 0)
+    ImageDraw.Draw(corners).rounded_rectangle((-PANEL_RADIUS * 8, 0, hw * 4 - 1, hh * 4 - 1),
+                                              radius=PANEL_RADIUS * 4, fill=255)
+    corners = corners.resize(HEADSHOT, Image.LANCZOS)
+    pic.putalpha(ImageChops.multiply(ImageChops.multiply(pic.getchannel("A"), fade), corners))
+    return pic
 
 
 def archive_art(dst, cpk):

@@ -314,11 +314,12 @@ local choiceWindow = nil  -- the window asking, if one is
 local choiceSince = nil   -- the frame its box started opening here
 local choiceGone = nil    -- the frame it stopped asking, while its box closes here
 local choiceN = 2
--- A choice the protagonist makes shows them beside it (the window's +0x52 is set; its +0x4E counts the options).
+-- Every choice shows the protagonist beside it, even where the game doesn't (its window's +0x52 is set when it
+-- does; its +0x4E counts the options).
 -- Here they slide and fade in from the right behind the box as it opens, and back out as it closes, in the
 -- bust-up of the outfit they're wearing: the one the game has loaded (its bust-up slots, 0x21C apart from
 -- BUSTUP_SLOTS, hold "bustup/b<character>_<outfit>.bin"), else the season's uniform.
-local WIN_PORTRAIT, WIN_COUNT = 0x52, 0x4E
+local WIN_COUNT = 0x4E
 local BUSTUP_SLOTS, BUSTUP_SLOT, BUSTUP_COUNT = 0x08C3F388, 0x21C, 8
 local OUTFITS = { ["1_1"] = true, ["1_2"] = true, ["1_3"] = true, ["1_4"] = true, ["11_0"] = true,
     ["21_0"] = true, ["61_0"] = true, ["81_0"] = true }
@@ -431,12 +432,11 @@ local function choice()
     local female = (mem.u32(FEMALE_FLAGS) >> 7) & 1 == 1
     if not choiceSince then
         choiceSince = frame
-        choicePortrait = mem.u16(w + WIN_PORTRAIT) ~= 0
+        choicePortrait = true  -- every choice is the player's, whether the game shows them or not
         publish("ch_who", (female and "99_" or "1_") .. protagonistOutfit(female))
         nextBlink, blinkAt = frame + math.random(60, 200), nil
     end
     choiceGone = nil
-    if mem.u16(w + WIN_PORTRAIT) ~= 0 then choicePortrait = true end  -- set a frame or so after it opens
     local cursor = mem.u16(w + 0x4A)
     local lines = options(w)
     local n = math.min(#lines > 0 and #lines or mem.u16(w + WIN_COUNT), CHOICE_MAX)

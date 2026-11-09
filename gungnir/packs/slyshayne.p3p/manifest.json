@@ -312,15 +312,14 @@
             { "type": "label", "rect": [460, 264, 130, 40], "text": "{h_mood}", "font": "assets/game/font_home_acc{g}.json", "size": 52 },
             // The Persona, its headshot to the right.
             { "type": "rect", "rect": [44, 332, 560, 164], "bg": "{g} ? '#FFD3E2' : '#73B5F7'", "radius": 12 },
+            // Panel high, fading out to the left, its right corners rounded with the panel's.
+            { "type": "image", "rect": [384, 332, 220, 164], "src": "assets/game/ps_{p_id}.png" },
             { "type": "label", "rect": [68, 352, 50, 30], "text": "LV", "font": "assets/game/font_home_ink{g}.json", "size": 52 },
             { "type": "label", "rect": [126, 312, 60, 90], "text": "{p_lv}", "font": "assets/game/font_home_ink{g}.json", "size": 104 },
             { "type": "label", "rect": [184, 312, 270, 90], "text": "{p_name}", "font": "assets/game/font_home_ink{g}.json", "size": 104, "scale_x": "p_name_s", "scale_y": "p_name_s", "origin": [0, 0.8] },
             { "type": "rect", "rect": [60, 398, 380, 6], "bg": "{g} ? '#F07AA4' : '#4FA8F5'" },
             { "type": "label", "rect": [60, 404, 380, 40], "text": "{p_arc}", "font": "assets/game/font_home_ink{g}.json", "size": 52, "text_align": "center" },
             { "type": "label", "rect": [60, 444, 380, 40], "text": "NEXT EXP  {p_next}", "font": "assets/game/font_home_ink{g}.json", "size": 52, "text_align": "center" },
-            { "type": "rect", "rect": [456, 346, 136, 136], "bg": "{g} ? '#FBC2D7' : '#8EC4FA'", "radius": 8 },
-            { "type": "image", "rect": [460, 350, 128, 128], "src": "assets/game/ps_{p_id}.png" },
-            { "type": "rect", "rect": [456, 346, 136, 136], "border": 3, "border_color": "{g} ? '#A8274F' : '#1F5C9E'", "radius": 8 },
             // Social stats: each with its rank in pips and the game's name for it.
             { "type": "rect", "rect": [44, 520, 560, 448], "bg": "{g} ? '#FFD3E2' : '#73B5F7'", "radius": 12 },
             { "type": "group", "repeat": "3", "repeat_var": "k", "rect": [44, "520 + 148 * {k}", 560, 148], "children": [
