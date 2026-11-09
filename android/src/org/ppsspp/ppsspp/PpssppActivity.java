@@ -130,11 +130,13 @@ public class PpssppActivity extends AppCompatActivity implements SensorEventList
 		@Override
 		public void onDisplayAdded(int displayId) {
 			updateExternalDisplay();
+			updateGungnirCompanion();
 		}
 
 		@Override
 		public void onDisplayRemoved(int displayId) {
 			updateExternalDisplay();
+			updateGungnirCompanion();
 		}
 
 		@Override
@@ -142,9 +144,15 @@ public class PpssppActivity extends AppCompatActivity implements SensorEventList
 			// The device's own screen changes all the time (refresh rate).
 			if (displayId != Display.DEFAULT_DISPLAY) {
 				updateExternalDisplay();
+				updateGungnirCompanion();
 			}
 		}
 	};
+
+	// The Gungnir companion screen on a dual-screen handheld's second display. The native host says when a
+	// pack is running; static because the native side outlives a recreated activity.
+	private static boolean gungnirCompanionWanted = false;
+	private GungnirCompanion gungnirCompanion;
 
 	// This is to avoid losing the game/menu state etc when we are just
 	// switched-away from or rotated etc.
@@ -1007,7 +1015,10 @@ public class PpssppActivity extends AppCompatActivity implements SensorEventList
 		if (externalDisplayWatched && "1".equals(NativeApp.queryConfig("externalDisplayOutput"))) {
 			DisplayManager displayManager = (DisplayManager)getSystemService(Context.DISPLAY_SERVICE);
 			for (Display candidate : displayManager.getDisplays(DisplayManager.DISPLAY_CATEGORY_PRESENTATION)) {
-				if (!isBuiltInDisplay(candidate)) {
+				// Only a screen Android knows is plugged in from outside (a TV, a monitor, a dock) gets the game. A
+				// dual-screen handheld's own second screen is the companion's, and isn't always marked built in: the
+				// AYN Thor's reports no connection type at all, so "not built in" would send the game down there.
+				if (isExternalConnection(candidate)) {
 					display = candidate;
 					break;
 				}
@@ -1046,12 +1057,90 @@ public class PpssppActivity extends AppCompatActivity implements SensorEventList
 		return info != null && info.getConnectionToSinkType() == DeviceProductInfo.CONNECTION_TO_SINK_BUILT_IN;
 	}
 
+	// A display Android knows is plugged in from outside (HDMI, USB-C, a dock), directly or through something.
+	// Before Android 12 nothing can tell, and a screen that reports nothing (the Thor's second one) isn't either.
+	private static boolean isExternalConnection(Display display) {
+		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+			return false;
+		}
+		DeviceProductInfo info = display.getDeviceProductInfo();
+		if (info == null) {
+			return false;
+		}
+		int sink = info.getConnectionToSinkType();
+		return sink == DeviceProductInfo.CONNECTION_TO_SINK_DIRECT || sink == DeviceProductInfo.CONNECTION_TO_SINK_TRANSITIVE;
+	}
+
 	private void dismissExternalDisplay() {
 		// Cleared first, so its dismiss listener knows it was us.
 		ExternalDisplayPresentation presentation = externalDisplayPresentation;
 		externalDisplayPresentation = null;
 		if (presentation != null) {
 			presentation.dismiss();
+		}
+	}
+
+	// Shows the Gungnir companion while a pack runs and we're started, always on the screen the game isn't on:
+	// - Game on the main (top) display: a Presentation on a secondary display that's not the one the game
+	//   itself is mirrored to (updateExternalDisplay).
+	// - Game on a secondary (bottom) display: GungnirCompanionActivity on the main one, since Android only
+	//   allows a Presentation on a secondary display.
+	private void updateGungnirCompanion() {
+		final boolean wanted = gungnirCompanionWanted && externalDisplayWatched;
+		final int gameDisplayId = getWindowManager().getDefaultDisplay().getDisplayId();
+		if (wanted && gameDisplayId != Display.DEFAULT_DISPLAY && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+			dismissGungnirCompanion();
+			GungnirCompanionActivity.show(this, Display.DEFAULT_DISPLAY);
+			return;
+		}
+		if (GungnirCompanionActivity.isWanted()) {
+			GungnirCompanionActivity.close();
+		}
+
+		Display display = null;
+		if (wanted) {
+			int tvDisplayId = externalDisplayPresentation != null ? externalDisplayPresentation.getDisplay().getDisplayId() : Display.INVALID_DISPLAY;
+			DisplayManager displayManager = (DisplayManager)getSystemService(Context.DISPLAY_SERVICE);
+			for (Display candidate : displayManager.getDisplays(DisplayManager.DISPLAY_CATEGORY_PRESENTATION)) {
+				int id = candidate.getDisplayId();
+				if (id != gameDisplayId && id != tvDisplayId && id != Display.DEFAULT_DISPLAY) {
+					display = candidate;
+					break;
+				}
+			}
+		}
+		if (gungnirCompanion != null && (display == null || !gungnirCompanion.isShowing() || gungnirCompanion.getDisplay().getDisplayId() != display.getDisplayId())) {
+			dismissGungnirCompanion();
+		}
+		if (gungnirCompanion != null || display == null) {
+			if (wanted && display == null) {
+				Log.i(TAG, "Gungnir: a pack is running, but there's no second display for its companion screen");
+			}
+			return;
+		}
+		Log.i(TAG, "Gungnir: showing the companion on display " + display.getDisplayId() + " (" + display.getName() + ")");
+		GungnirCompanion companion = new GungnirCompanion(this, display);
+		companion.setOnDismissListener(dialog -> {
+			// Dismissed by the system (some display changes do). Show it again if it should be.
+			if (gungnirCompanion == companion) {
+				gungnirCompanion = null;
+				new Handler(Looper.getMainLooper()).post(this::updateGungnirCompanion);
+			}
+		});
+		try {
+			companion.show();
+			gungnirCompanion = companion;
+		} catch (WindowManager.InvalidDisplayException e) {
+			Log.w(TAG, "Gungnir: couldn't show the companion on display " + display.getDisplayId() + ": " + e);
+		}
+	}
+
+	private void dismissGungnirCompanion() {
+		// Cleared first, so its dismiss listener knows it was us.
+		GungnirCompanion companion = gungnirCompanion;
+		gungnirCompanion = null;
+		if (companion != null) {
+			companion.dismiss();
 		}
 	}
 
@@ -1200,6 +1289,7 @@ public class PpssppActivity extends AppCompatActivity implements SensorEventList
 			displayManager.registerDisplayListener(displayListener, null);
 			externalDisplayWatched = true;
 			updateExternalDisplay();
+			updateGungnirCompanion();
 		}
 
 		// In case the surface outlived the stop. Otherwise this waits for surfaceCreated.
@@ -1223,6 +1313,8 @@ public class PpssppActivity extends AppCompatActivity implements SensorEventList
 		displayManager.unregisterDisplayListener(displayListener);
 		externalDisplayWatched = false;
 		dismissExternalDisplay();
+		dismissGungnirCompanion();
+		GungnirCompanionActivity.close();
 
 		// Normally surfaceDestroyed has done this already, but not every device destroys the surface of a
 		// stopped activity, and an invisible game shouldn't keep running.
@@ -1312,6 +1404,8 @@ public class PpssppActivity extends AppCompatActivity implements SensorEventList
 		if (m_hasNoNativeBinary) {
 			return;
 		}
+		// Moving the game to the other screen comes as a configuration change: the companion swaps over.
+		updateGungnirCompanion();
 		// The surface size change that comes with it is what actually updates the native side.
 		// This re-measures the display, so the density check below sees the new value.
 		updateSystemUiVisibility();
@@ -1947,6 +2041,21 @@ public class PpssppActivity extends AppCompatActivity implements SensorEventList
 			return true;
 		} else if (command.equals("externalDisplay")) {
 			updateExternalDisplay();
+			updateGungnirCompanion();
+			return true;
+		} else if (command.equals("gungnir_companion")) {
+			gungnirCompanionWanted = params.equals("show");
+			// First: the game may have to give the second screen back (or may get it again).
+			updateExternalDisplay();
+			updateGungnirCompanion();
+			return true;
+		} else if (command.equals("gungnir_haptic")) {
+			int kind = Integer.parseInt(params);
+			if (gungnirCompanion != null) {
+				gungnirCompanion.playHaptic(kind);
+			} else {
+				GungnirCompanionActivity.playHaptic(kind);
+			}
 			return true;
 		} else if (command.equals("immersive")) {
 			updateSystemUiVisibility();

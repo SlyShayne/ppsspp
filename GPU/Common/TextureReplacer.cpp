@@ -19,6 +19,7 @@
 
 #include <cstring>
 #include <memory>
+#include <mutex>
 #include <png.h>
 
 #include "ext/basis_universal/basisu_transcoder.h"
@@ -88,10 +89,22 @@ bool TextureReplacer::LoadPackForTesting(const Path &basePath, std::string *erro
 	return replaceEnabled_;
 }
 
+// A companion pack's own replacements (Gungnir, on Android), such as a texture made transparent to hide
+// a menu the pack draws on the second screen instead. Set from the host, read on the GPU thread at the
+// next NotifyConfigChanged().
+static std::mutex g_companionTexturesLock;
+static Path g_companionTextures;
+
+void TextureReplacer::SetCompanionTextures(const Path &dir) {
+	std::lock_guard<std::mutex> guard(g_companionTexturesLock);
+	g_companionTextures = dir;
+}
+
 void TextureReplacer::NotifyConfigChanged() {
 	gameID_ = g_paramSFO.GetDiscID();
 
 	bool wasReplaceEnabled = replaceEnabled_;
+	const Path oldBasePath = basePath_;
 	replaceEnabled_ = g_Config.bReplaceTextures;
 	saveEnabled_ = g_Config.bSaveNewTextures;
 	if (replaceEnabled_ || saveEnabled_) {
@@ -108,12 +121,37 @@ void TextureReplacer::NotifyConfigChanged() {
 		}
 	}
 
+	// The player's own texture pack for the game wins over a companion pack's.
+	bool companion = false;
+	{
+		std::lock_guard<std::mutex> guard(g_companionTexturesLock);
+		if (!g_companionTextures.empty()) {
+			// A folder that only holds dumped textures (new/) isn't a pack.
+			if (replaceEnabled_ && !File::Exists(basePath_ / INI_FILENAME) && !File::Exists(basePath_ / ZIP_FILENAME)) {
+				replaceEnabled_ = false;
+			}
+			if (replaceEnabled_) {
+				WARN_LOG(Log::TexReplacement, "Using the texture pack in '%s', not the companion pack's", basePath_.c_str());
+			} else if (File::IsDirectory(g_companionTextures)) {
+				basePath_ = g_companionTextures;
+				replaceEnabled_ = true;
+				companion = true;
+			}
+		}
+	}
+	if (replaceEnabled_ && wasReplaceEnabled && basePath_ != oldBasePath) {
+		// Moved between the player's pack and a companion's: load the new one from scratch.
+		DeleteVFS();
+		Decimate(ReplacerDecimateMode::ALL);
+		wasReplaceEnabled = false;
+	}
+
 	if (!replaceEnabled_ && wasReplaceEnabled) {
 		DeleteVFS();
 		Decimate(ReplacerDecimateMode::ALL);
 	} else if (!wasReplaceEnabled && replaceEnabled_) {
 		std::string error;
-		replaceEnabled_ = LoadIni(&error);
+		replaceEnabled_ = LoadIni(&error, !companion);
 		if (!error.empty() && !replaceEnabled_) {
 			ERROR_LOG(Log::G3D, "ERROR: %s", error.c_str());
 			g_OSD.Show(OSDType::MESSAGE_ERROR, error, 5.0f);

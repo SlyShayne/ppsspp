@@ -84,6 +84,10 @@ public:
 
 	void NotifyConfigChanged();
 
+	// A folder of replacements laid out as a texture pack, used when the player has none for the game.
+	// Empty turns it off. Takes effect at the next NotifyConfigChanged().
+	static void SetCompanionTextures(const Path &dir);
+
 	bool Enabled() const { return replaceEnabled_ || saveEnabled_; }  // used to check hashing method etc.
 	bool ReplaceEnabled() const { return replaceEnabled_; }
 	bool SaveEnabled() const { return saveEnabled_; }

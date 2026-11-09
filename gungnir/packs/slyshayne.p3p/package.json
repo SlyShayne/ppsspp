@@ -1,0 +1,11 @@
+{
+  "id": "slyshayne.p3p",
+  "name": "Persona 3 Portable",
+  "version": "0.1.0",
+  "author": "SlyShayne",
+  "min_runtime": 1,
+  // The addresses in scripts/main.lua were found on the US release only (gungnir/notes/p3p-ULUS10512-memory.md).
+  "games": [
+    { "id": "ULUS10512", "platform": "psp", "name": "Persona 3 Portable (USA)" },
+  ],
+}

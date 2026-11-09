@@ -114,6 +114,7 @@ struct JNIEnv {};
 
 #include "app-android.h"
 #include "android/jni/PerformanceHint.h"
+#include "android/jni/GungnirHost.h"
 
 AndroidAudioState *g_audioState;
 
@@ -791,6 +792,12 @@ extern "C" void Java_org_ppsspp_ppsspp_NativeApp_init
 	// TODO: We should be able to do the Vulkan init in parallel with NativeInit.
 	NativeInit((int)args.size(), &args[0], cmdLineOptions, user_data_path.c_str(), externalStorageDir.c_str(), cacheDir.c_str());
 
+	// The companion screen. The player drops packs in the memory stick's PSP/GUNGNIR/packs; they're
+	// installed here, an app folder Core can open with plain file calls.
+	GungnirHost_Init((!g_extFilesDir.empty() ? g_extFilesDir + "/" : user_data_path) + "gungnir",
+		[](const char *command, const char *param) { PushCommand(command, param); });
+	INFO_LOG(Log::System, "Gungnir: packs from %s, installed in %s", GungnirHost_DropFolder().c_str(), GungnirHost_PacksRoot().c_str());
+
 	bFirstResume = true;
 
 	// Before the graphics context: Vulkan has to know what OpenXR needs from its instance and device,
@@ -857,6 +864,12 @@ extern "C" void Java_org_ppsspp_ppsspp_NativeApp_clearAchievementsHostOverride(J
 	NativeClearAchievementsHostOverride();
 }
 
+// The game's audio, then the Gungnir pack's sounds on top.
+static void AndroidMix(short *buffer, int numFrames, int sampleRateHz, void *userdata) {
+	NativeMix(buffer, numFrames, sampleRateHz, userdata);
+	GungnirHost_MixAudio(buffer, numFrames, sampleRateHz);
+}
+
 AudioBackend *System_CreateAudioBackend() {
 	// Use legacy mechanisms.
 	return nullptr;
@@ -882,7 +895,7 @@ extern "C" void Java_org_ppsspp_ppsspp_NativeApp_audioInit(JNIEnv *, jclass) {
 
 	INFO_LOG(Log::Audio, "NativeApp.audioInit() -- Using Oboe audio! frames/buffer: %i	 optimal sr: %i	 actual sr: %i", optimalFramesPerBuffer, optimalSampleRate, sampleRate);
 	if (!g_audioState) {
-		g_audioState = AndroidAudio_Init(&NativeMix, framesPerBuffer, sampleRate);
+		g_audioState = AndroidAudio_Init(&AndroidMix, framesPerBuffer, sampleRate);
 	} else {
 		ERROR_LOG(Log::Audio, "Audio state already initialized");
 	}
@@ -1796,6 +1809,7 @@ static void RenderLoopThread(ANativeWindow *wnd, GraphicsContext *graphicsContex
 	const auto frame = [&perfHint](GraphicsContext *graphicsContext) {
 		ApplyPendingResize();
 		NativeFrame(graphicsContext);
+		GungnirHost_AfterHostFrame();
 		ProcessFrameCommands();
 		perfHint.ReportFrame();
 		return !exitRenderLoop;

@@ -895,6 +895,8 @@ if(ANDROID)
 		android/jni/OboeContext.h
 		android/jni/PerformanceHint.cpp
 		android/jni/PerformanceHint.h
+		android/jni/GungnirHost.cpp
+		android/jni/GungnirHost.h
 	)
 	# No target
 elseif(IOS AND NOT LIBRETRO)
@@ -1110,8 +1112,27 @@ add_subdirectory(Core)
 
 if(ANDROID AND NOT LIBRETRO)
 	add_subdirectory(ext/oboe-build)
+	# Gungnir Core (ext/gungnir-core): the companion runtime, as libgungnir_core.so with its JNI, the way
+	# its own Android library builds it. A shared library of its own so its Lua (gn_lua, with a pattern-step
+	# hook) never mixes with PPSSPP's: --exclude-libs keeps gn_lua's symbols out of its exports, so its calls
+	# into Lua bind inside it. Its C++ needs exceptions (std::filesystem), which the Android flags turn off.
+	# It also inherits this file's options: -std=c++17 (it's C++20; a later -std wins) and
+	# _LIBCPP_REMOVE_TRANSITIVE_INCLUDES (a later -U wins), so both are undone for its targets.
+	set(GN_RUNTIME_TESTS OFF CACHE BOOL "" FORCE)
+	add_subdirectory(ext/gungnir-core/runtime ${CMAKE_BINARY_DIR}/gungnir-runtime)
+	target_compile_options(gn_runtime PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:-std=c++20>" -fexceptions -frtti -U_LIBCPP_REMOVE_TRANSITIVE_INCLUDES)
+	target_compile_options(gn_lua PRIVATE -U_LIBCPP_REMOVE_TRANSITIVE_INCLUDES)
+	add_library(gungnir_core SHARED ext/gungnir-core/android/src/main/cpp/core_jni.c)
+	target_link_libraries(gungnir_core PRIVATE -Wl,--whole-archive gn_runtime -Wl,--no-whole-archive gn_lua android log)
+	# -Bsymbolic: its calls to its own functions (stb, Lua) bind inside it, even where ppsspp_jni has a symbol of the same name.
+	target_link_options(gungnir_core PRIVATE "-Wl,--exclude-libs,libgn_lua.a" "-Wl,-Bsymbolic")
+	target_include_directories(gungnir_core PUBLIC ext/gungnir-core/runtime/include)
+	if(ARM64)
+		target_link_options(gungnir_core PRIVATE "-Wl,-z,max-page-size=16384")
+	endif()
+
 	add_library(ppsspp_jni SHARED ${AndroidJniSource})
-	target_link_libraries(ppsspp_jni Core log EGL oboe)
+	target_link_libraries(ppsspp_jni Core log EGL oboe gungnir_core)
 	if(TARGET ppsspp_ui)
 		target_link_libraries(ppsspp_jni ppsspp_ui)
 	endif()

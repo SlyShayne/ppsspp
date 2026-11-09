@@ -34,6 +34,8 @@
     <uses-permission-sdk-23 android:name="android.permission.CAMERA" />
     <uses-permission-sdk-23 android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
+    <!-- The Gungnir companion screen plays a pack's haptics. A normal permission, granted at install. -->
+    <uses-permission android:name="android.permission.VIBRATE" />
 
     <!-- AndroidX minimum SDK workaround. We don't care if it's broken on older versions. -->
     <uses-sdk tools:overrideLibrary="androidx.appcompat.resources,androidx.appcompat,androidx.fragment,androidx.drawerlayout,androidx.vectordrawable.animated,androidx.vectordrawable,androidx.viewpager,androidx.loader,androidx.activity,androidx.annotation,androidx.customview,androidx.cursoradapter,androidx.arch,androidx.collection,androidx.core,androidx.versionedparcelable,androidx.interpolator,androidx.lifecycle,androidx.loader,androidx.savedstate,androidx.lifecycle.viewmodel,androidx.lifecycle.livedata,androidx.lifecycle.livedata.core,androidx.arch.core,androidx.documentfile"/>
@@ -120,6 +122,15 @@
 		<activity android:name=".DocumentResultProxyActivity"
 			android:theme="@style/Theme.ProxyTransparent"
 			android:launchMode="standard" />
+		<!-- The Gungnir companion screen on the top display, when the game is on the bottom one. Its own
+		task (taskAffinity), out of Recents, never started from outside the app. -->
+		<activity android:name=".GungnirCompanionActivity"
+			android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen"
+			android:taskAffinity="org.ppsspp.ppsspp.gungnir"
+			android:excludeFromRecents="true"
+			android:resizeableActivity="true"
+			android:configChanges="locale|keyboard|keyboardHidden|navigation|uiMode|orientation|screenSize|screenLayout|smallestScreenSize|density"
+			android:exported="false" />
 		<receiver
 			android:name=".AchievementsHostOverrideReceiver"
 			android:exported="true">

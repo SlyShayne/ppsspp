@@ -66,3 +66,6 @@
 [submodule "ext/oboe"]
 	path = ext/oboe
 	url = https://github.com/google/oboe.git
+[submodule "ext/gungnir-core"]
+	path = ext/gungnir-core
+	url = https://github.com/Unix-Epoch/gungnir-core.git

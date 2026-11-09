@@ -118,6 +118,11 @@ static std::atomic<bool> gameInputBlocked{ false };
 // would otherwise never be seen by the game. Guarded by ctrlMutex.
 static u32 ctrlUnsampledPresses = 0;
 
+// Buttons a host feature holds on the game's behalf (a Gungnir companion pack's touch menu), added to
+// the player's at each sample so neither hides the other. Not saved: the pack lets go on a state load.
+// Guarded by ctrlMutex.
+static u32 ctrlHostHeld = 0;
+
 // These buttons are not affected by rapid fire (neither is analog.)
 const u32 CTRL_EMU_RAPIDFIRE_MASK = CTRL_UP | CTRL_DOWN | CTRL_LEFT | CTRL_RIGHT;
 
@@ -126,7 +131,7 @@ static void __CtrlUpdateLatch()
 	std::lock_guard<std::mutex> guard(ctrlMutex);
 	u64 t = CoreTiming::GetGlobalTimeUs();
 
-	u32 buttons = ctrlCurrent.buttons | ctrlUnsampledPresses;
+	u32 buttons = ctrlCurrent.buttons | ctrlUnsampledPresses | ctrlHostHeld;
 	ctrlUnsampledPresses = 0;
 	if (emuRapidFire && emuRapidFireToggle)
 		buttons &= CTRL_EMU_RAPIDFIRE_MASK;
@@ -280,6 +285,11 @@ static void __CtrlUpdateTimedPresses() {
 		released &= ~press.buttons;
 	}
 	ctrlCurrent.buttons &= ~released;
+}
+
+void __CtrlSetHostHeld(u32 buttons) {
+	std::lock_guard<std::mutex> guard(ctrlMutex);
+	ctrlHostHeld = buttons & CTRL_MASK_USER;
 }
 
 void __CtrlUpdateButtons(u32 bitsToSet, u32 bitsToClear)
@@ -516,6 +526,7 @@ void __CtrlShutdown()
 	waitingThreads.clear();
 	std::lock_guard<std::mutex> guard(ctrlMutex);
 	timedPresses.clear();
+	ctrlHostHeld = 0;
 }
 
 static u32 sceCtrlSetSamplingCycle(u32 cycle)

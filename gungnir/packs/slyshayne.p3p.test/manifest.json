@@ -1,0 +1,67 @@
+// A test pack, not a game companion yet: it proves each part of the PPSSPP host works on the device.
+// - Frame counter and bar: the host ticks every frame.
+// - RUNNING / PAUSED: ticks keep coming while PPSSPP's menu is open.
+// - RAM readout: reads of the game's memory work (it changes as the game loads).
+// - Tap and Buzz: touch reaches the pack, and haptics come back.
+// - Up, Down, Cross, Circle: the pack presses the game's buttons (the host's "input" capability).
+//   At P3P's title, Cross gets past PRESS ANY BUTTON, and Up and Down move the menu's cursor.
+// It writes nothing to the game's memory.
+{
+  "script": "scripts/main.lua",
+  "update_hz": 15,
+  "values": {
+    "taps": { "state": 0 },
+    "presses": { "state": 0 },
+  },
+  "actions": {
+    "tap": { "kind": "set", "value": "taps", "to": "taps + 1", "haptic": "tap" },
+    "buzz": { "kind": "haptic", "haptic": "heavy" },
+    "count": { "kind": "set", "value": "presses", "to": "presses + 1" },
+    "press_up": { "kind": "sequence", "do": ["count", "up"], "haptic": "tap" },
+    "press_down": { "kind": "sequence", "do": ["count", "down"], "haptic": "tap" },
+    "press_cross": { "kind": "sequence", "do": ["count", "cross"], "haptic": "tap" },
+    "press_circle": { "kind": "sequence", "do": ["count", "circle"], "haptic": "tap" },
+    "up": { "kind": "press", "button": "up" },
+    "down": { "kind": "press", "button": "down" },
+    "cross": { "kind": "press", "button": "cross" },
+    "circle": { "kind": "press", "button": "circle" },
+  },
+  "styles": {
+    "panel": { "bg": "#1E2A4A", "border": 4, "border_color": "#4FA3FF", "radius": 12, "pad": 12 },
+    "pad": { "bg": "#14304A", "border": 4, "border_color": "#3CD070", "radius": 12, "pad": 8 },
+  },
+  "start": "home",
+  "pages": {
+    "home": {
+      "bg": "#0B1020",
+      "widgets": [
+        { "type": "label", "rect": [60, 40, 1120, 70], "text": "Persona 3 Portable", "size": 56, "color": "#4FA3FF" },
+        { "type": "label", "rect": [60, 115, 1120, 50], "text": "Gungnir companion test", "size": 36, "color": "#A0B4D8" },
+
+        { "type": "label", "rect": [60, 200, 1120, 50], "text": "Frame {frame}  ({seconds} s)", "size": 40 },
+        { "type": "rect", "rect": [60, 260, 1120, 30], "bg": "#1E2A4A" },
+        { "type": "rect", "rect": [60, 260, 1120, 30], "bg": "#4FA3FF", "origin": [0, 0.5], "scale_x": "(frame % 60) / 59.0" },
+        { "type": "label", "rect": [60, 315, 1120, 50], "text": "{=@paused ? 'PAUSED' : 'RUNNING'}", "size": 40,
+          "color": "@paused ? '#F6D046' : '#3CD070'" },
+        { "type": "label", "rect": [60, 385, 1120, 50], "text": "RAM 0x08804000: {ram_hex}", "size": 40 },
+
+        // Buttons are labels with on_tap: gungnir-core's std.button lives in a library the Gungnir app bundles.
+        { "type": "label", "rect": [60, 470, 360, 50], "text": "Taps: {taps}", "size": 40 },
+        { "type": "label", "rect": [440, 470, 740, 50], "text": "Game presses: {presses}", "size": 40, "color": "#3CD070" },
+        { "type": "label", "rect": [60, 540, 520, 150], "text": "Tap", "size": 48, "class": "panel",
+          "align": "center", "text_align": "center", "on_tap": "tap" },
+        { "type": "label", "rect": [660, 540, 520, 150], "text": "Buzz", "size": 48, "class": "panel",
+          "align": "center", "text_align": "center", "on_tap": "buzz" },
+
+        { "type": "label", "rect": [60, 730, 260, 150], "text": "Up", "size": 44, "class": "pad",
+          "align": "center", "text_align": "center", "on_tap": "press_up" },
+        { "type": "label", "rect": [347, 730, 260, 150], "text": "Down", "size": 44, "class": "pad",
+          "align": "center", "text_align": "center", "on_tap": "press_down" },
+        { "type": "label", "rect": [633, 730, 260, 150], "text": "Cross", "size": 44, "class": "pad",
+          "align": "center", "text_align": "center", "on_tap": "press_cross" },
+        { "type": "label", "rect": [920, 730, 260, 150], "text": "Circle", "size": 44, "class": "pad",
+          "align": "center", "text_align": "center", "on_tap": "press_circle" },
+      ],
+    },
+  },
+}

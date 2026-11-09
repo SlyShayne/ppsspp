@@ -1,0 +1,13 @@
+{
+  "id": "slyshayne.p3p.test",
+  "name": "Persona 3 Portable: companion test",
+  "version": "0.1.0",
+  "author": "SlyShayne",
+  "min_runtime": 1,
+  // Matched by PARAM.SFO's DISC_ID, one entry per region.
+  "games": [
+    { "id": "ULUS10512", "platform": "psp", "name": "Persona 3 Portable (USA)" },
+    { "id": "ULES01523", "platform": "psp", "name": "Persona 3 Portable (Europe)" },
+    { "id": "ULJM05489", "platform": "psp", "name": "Persona 3 Portable (Japan)" },
+  ],
+}

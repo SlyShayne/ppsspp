@@ -1,0 +1,496 @@
+// Persona 3 Portable (USA): the title screen and Config, on the second screen, following the game.
+// - Black while the game loads, then the title's own art, fading in and breathing as the game's does.
+// - PRESS ANY BUTTON: tap anywhere.
+// - The menu: NEW GAME, LOAD GAME, CONFIG, DATA INSTALL, the highlight sliding as the game's does; tap one.
+// - Config: every row with its switch and help line; tap ON or OFF to switch, OK to confirm, Back to leave.
+// The game's own menu, highlight and Config are hidden on its screen while this pack runs.
+// Taps snap the game's cursor and press its button (scripts/main.lua). The title art is the game's,
+// as is Config's, built from your own dump with gungnir/tools/p3p_assets.py.
+{
+  "script": "scripts/main.lua",
+  "update_hz": 60,
+  "values": {
+    "screen": { "state": "idle" },
+    "fade_art": { "state": 1 }, "fade_bg": { "state": 1 }, "fade_text": { "state": 1 }, "breath": { "state": 1 },
+    "female_op": { "state": 1 }, "male_op": { "state": 0 }, "female_dx": { "state": 0 }, "male_dx": { "state": 0 },
+    "cursor": { "state": 1 }, "pill": { "state": 1 }, "menu_op": { "state": 1 },
+    "cfg_panel": { "state": 1 }, "cfg_rows": { "state": 1 },
+    "shade": { "state": 0 }, "him_flat": { "state": 0 }, "her_flat": { "state": 0 }, "him_dx": { "state": 0 }, "her_dx": { "state": 0 },
+    "trail_d0": { "state": 3 }, "trail_d1": { "state": 2 }, "trail_d2": { "state": 1 }, "trail_d3": { "state": 0 },
+    "trail_f0": { "state": 0.84 }, "trail_f1": { "state": 0.42 }, "trail_f2": { "state": 0.05 }, "trail_f3": { "state": 0 },
+    "row": { "state": 0 },
+    "dark_hour": { "state": 0 }, "dh_tint": { "state": 0 },
+    "h_name_s": { "state": 1 }, "h_next": { "state": 0 }, "h_cond": { "state": 0 }, "p_id": { "state": 1 }, "p_name_s": { "state": 1 },
+    "p_next": { "state": 0 }, "st_s0": { "state": 1 }, "st_s1": { "state": 1 }, "st_s2": { "state": 1 }, "sl_s_name_s": { "state": 1 }, "sl_s_bust": { "state": 2 },
+    "sl_card0": { "state": 1 }, "sl_name_s0": { "state": 1 },
+    "sl_card1": { "state": 1 }, "sl_name_s1": { "state": 1 },
+    "sl_card2": { "state": 1 }, "sl_name_s2": { "state": 1 },
+    "sl_card3": { "state": 1 }, "sl_name_s3": { "state": 1 },
+    "sl_card4": { "state": 1 }, "sl_name_s4": { "state": 1 },
+    "sl_card5": { "state": 1 }, "sl_name_s5": { "state": 1 },
+    "sl_card6": { "state": 1 }, "sl_name_s6": { "state": 1 },
+    "home_on": { "state": 0 }, "home_op": { "state": 0 }, "home_view": { "state": 0 }, "female": { "state": 0 },
+    "h_name": { "state": "" }, "h_lv": { "state": 1 }, "h_hp": { "state": 0 }, "h_sp": { "state": 0 }, "h_maxhp": { "state": 0 },
+    "h_maxsp": { "state": 0 }, "h_hpf": { "state": 0 }, "h_spf": { "state": 0 }, "h_mood": { "state": "" },
+    "h_funds": { "state": "0" }, "p_name": { "state": "" }, "p_lv": { "state": 1 }, "p_arc": { "state": "" },
+    "cal_title": { "state": "" }, "cal_rows": { "state": 5 }, "cal_sel": { "state": -1 }, "cal_sel_date": { "state": "" },
+    "cal_note": { "state": "" }, "cal_ups": { "state": 0 }, "sl_n": { "state": 0 }, "sl_top": { "state": 0 },
+    "sl_more": { "state": 0 }, "sl_sel": { "state": -1 }, "sl_s_name": { "state": "" }, "sl_s_arc": { "state": "" },
+    "sl_s_rank": { "state": 0 }, "st_r0": { "state": 1 }, "st_r1": { "state": 1 }, "st_r2": { "state": 1 },
+    "st_w0": { "state": "" }, "st_w1": { "state": "" }, "st_w2": { "state": "" }, "cal_up0": { "state": "" }, "cal_upd0": { "state": "" },
+    "cal_up1": { "state": "" }, "cal_upd1": { "state": "" }, "cal_up2": { "state": "" }, "cal_upd2": { "state": "" },
+    "sl_name0": { "state": "" }, "sl_arc0": { "state": "" }, "sl_num0": { "state": "" }, "sl_rank0": { "state": "" },
+    "sl_name1": { "state": "" }, "sl_arc1": { "state": "" }, "sl_num1": { "state": "" }, "sl_rank1": { "state": "" },
+    "sl_name2": { "state": "" }, "sl_arc2": { "state": "" }, "sl_num2": { "state": "" }, "sl_rank2": { "state": "" },
+    "sl_name3": { "state": "" }, "sl_arc3": { "state": "" }, "sl_num3": { "state": "" }, "sl_rank3": { "state": "" },
+    "sl_name4": { "state": "" }, "sl_arc4": { "state": "" }, "sl_num4": { "state": "" }, "sl_rank4": { "state": "" },
+    "sl_name5": { "state": "" }, "sl_arc5": { "state": "" }, "sl_num5": { "state": "" }, "sl_rank5": { "state": "" },
+    "sl_name6": { "state": "" }, "sl_arc6": { "state": "" }, "sl_num6": { "state": "" }, "sl_rank6": { "state": "" },
+    "cal_d0": { "state": "" }, "cal_k0": { "state": 0 }, "cal_m0": { "state": 0 }, "cal_d1": { "state": "" }, "cal_k1": { "state": 0 }, "cal_m1": { "state": 0 },
+    "cal_d2": { "state": "" }, "cal_k2": { "state": 0 }, "cal_m2": { "state": 0 }, "cal_d3": { "state": "" }, "cal_k3": { "state": 0 }, "cal_m3": { "state": 0 },
+    "cal_d4": { "state": "" }, "cal_k4": { "state": 0 }, "cal_m4": { "state": 0 }, "cal_d5": { "state": "" }, "cal_k5": { "state": 0 }, "cal_m5": { "state": 0 },
+    "cal_d6": { "state": "" }, "cal_k6": { "state": 0 }, "cal_m6": { "state": 0 }, "cal_d7": { "state": "" }, "cal_k7": { "state": 0 }, "cal_m7": { "state": 0 },
+    "cal_d8": { "state": "" }, "cal_k8": { "state": 0 }, "cal_m8": { "state": 0 }, "cal_d9": { "state": "" }, "cal_k9": { "state": 0 }, "cal_m9": { "state": 0 },
+    "cal_d10": { "state": "" }, "cal_k10": { "state": 0 }, "cal_m10": { "state": 0 }, "cal_d11": { "state": "" }, "cal_k11": { "state": 0 }, "cal_m11": { "state": 0 },
+    "cal_d12": { "state": "" }, "cal_k12": { "state": 0 }, "cal_m12": { "state": 0 }, "cal_d13": { "state": "" }, "cal_k13": { "state": 0 }, "cal_m13": { "state": 0 },
+    "cal_d14": { "state": "" }, "cal_k14": { "state": 0 }, "cal_m14": { "state": 0 }, "cal_d15": { "state": "" }, "cal_k15": { "state": 0 }, "cal_m15": { "state": 0 },
+    "cal_d16": { "state": "" }, "cal_k16": { "state": 0 }, "cal_m16": { "state": 0 }, "cal_d17": { "state": "" }, "cal_k17": { "state": 0 }, "cal_m17": { "state": 0 },
+    "cal_d18": { "state": "" }, "cal_k18": { "state": 0 }, "cal_m18": { "state": 0 }, "cal_d19": { "state": "" }, "cal_k19": { "state": 0 }, "cal_m19": { "state": 0 },
+    "cal_d20": { "state": "" }, "cal_k20": { "state": 0 }, "cal_m20": { "state": 0 }, "cal_d21": { "state": "" }, "cal_k21": { "state": 0 }, "cal_m21": { "state": 0 },
+    "cal_d22": { "state": "" }, "cal_k22": { "state": 0 }, "cal_m22": { "state": 0 }, "cal_d23": { "state": "" }, "cal_k23": { "state": 0 }, "cal_m23": { "state": 0 },
+    "cal_d24": { "state": "" }, "cal_k24": { "state": 0 }, "cal_m24": { "state": 0 }, "cal_d25": { "state": "" }, "cal_k25": { "state": 0 }, "cal_m25": { "state": 0 },
+    "cal_d26": { "state": "" }, "cal_k26": { "state": 0 }, "cal_m26": { "state": 0 }, "cal_d27": { "state": "" }, "cal_k27": { "state": 0 }, "cal_m27": { "state": 0 },
+    "cal_d28": { "state": "" }, "cal_k28": { "state": 0 }, "cal_m28": { "state": 0 }, "cal_d29": { "state": "" }, "cal_k29": { "state": 0 }, "cal_m29": { "state": 0 },
+    "cal_d30": { "state": "" }, "cal_k30": { "state": 0 }, "cal_m30": { "state": 0 }, "cal_d31": { "state": "" }, "cal_k31": { "state": 0 }, "cal_m31": { "state": 0 },
+    "cal_d32": { "state": "" }, "cal_k32": { "state": 0 }, "cal_m32": { "state": 0 }, "cal_d33": { "state": "" }, "cal_k33": { "state": 0 }, "cal_m33": { "state": 0 },
+    "cal_d34": { "state": "" }, "cal_k34": { "state": 0 }, "cal_m34": { "state": 0 }, "cal_d35": { "state": "" }, "cal_k35": { "state": 0 }, "cal_m35": { "state": 0 },
+    "cal_d36": { "state": "" }, "cal_k36": { "state": 0 }, "cal_m36": { "state": 0 }, "cal_d37": { "state": "" }, "cal_k37": { "state": 0 }, "cal_m37": { "state": 0 },
+    "cal_d38": { "state": "" }, "cal_k38": { "state": 0 }, "cal_m38": { "state": 0 }, "cal_d39": { "state": "" }, "cal_k39": { "state": 0 }, "cal_m39": { "state": 0 },
+    "cal_d40": { "state": "" }, "cal_k40": { "state": 0 }, "cal_m40": { "state": 0 }, "cal_d41": { "state": "" }, "cal_k41": { "state": 0 }, "cal_m41": { "state": 0 },
+    "kb_on": { "state": 0 }, "kb_page": { "state": 0 }, "kb_cur": { "state": 0 }, "kb_frame": { "state": 1 },
+    "kb_del": { "state": 0 }, "kb_l": { "state": 0 }, "kb_r": { "state": 0 }, "kb_end": { "state": 0 },
+    "kb_row0": { "state": 1 }, "kb_row1": { "state": 1 }, "kb_row2": { "state": 1 }, "kb_row3": { "state": 1 }, "kb_row4": { "state": 1 }, "kb_row5": { "state": 1 },
+    "kb_bar_x": { "state": 0 }, "kb_bar_y": { "state": 0 }, "kb_ball_x": { "state": 0 }, "kb_ball_y": { "state": 0 },
+    "kb_key_x": { "state": 0 }, "kb_key_y": { "state": 0 }, "kb_glow_s": { "state": 120 }, "kb_glow_op": { "state": 0 },
+    "kb_t0_x": { "state": 0 }, "kb_t0_y": { "state": 0 }, "kb_t0_op": { "state": 0 },
+    "kb_t1_x": { "state": 0 }, "kb_t1_y": { "state": 0 }, "kb_t1_op": { "state": 0 },
+    "kb_t2_x": { "state": 0 }, "kb_t2_y": { "state": 0 }, "kb_t2_op": { "state": 0 },
+    "kb_tc": { "state": -1 },
+    "kb_n0": { "state": -1 }, "kb_n1": { "state": -1 }, "kb_n2": { "state": -1 }, "kb_n3": { "state": -1 },
+    "kb_n4": { "state": -1 }, "kb_n5": { "state": -1 }, "kb_n6": { "state": -1 }, "kb_n7": { "state": -1 },
+    "kb_n8": { "state": -1 }, "kb_n9": { "state": -1 }, "kb_n10": { "state": -1 }, "kb_n11": { "state": -1 },
+    "kb_n12": { "state": -1 }, "kb_n13": { "state": -1 }, "kb_n14": { "state": -1 }, "kb_n15": { "state": -1 },
+    "kb_dim": { "state": 0 }, "kb_green": { "state": 0 }, "kb_out": { "state": 0 },
+    "clk_on": { "state": 0 }, "clk_tint": { "state": 0 }, "clk_path": { "state": "M 0 0 Z" },
+    "clk_x0": { "state": 0 }, "clk_y0": { "state": 0 }, "clk_r0": { "state": 0 }, "clk_v0": { "state": 0 },
+    "clk_x1": { "state": 0 }, "clk_y1": { "state": 0 }, "clk_r1": { "state": 0 }, "clk_v1": { "state": 0 },
+    "clk_x2": { "state": 0 }, "clk_y2": { "state": 0 }, "clk_r2": { "state": 0 }, "clk_v2": { "state": 0 },
+    "clk_x3": { "state": 0 }, "clk_y3": { "state": 0 }, "clk_r3": { "state": 0 }, "clk_v3": { "state": 0 },
+    "clk_x4": { "state": 0 }, "clk_y4": { "state": 0 }, "clk_r4": { "state": 0 }, "clk_v4": { "state": 0 },
+    "clk_x5": { "state": 0 }, "clk_y5": { "state": 0 }, "clk_r5": { "state": 0 }, "clk_v5": { "state": 0 },
+    "clk_x6": { "state": 0 }, "clk_y6": { "state": 0 }, "clk_r6": { "state": 0 }, "clk_v6": { "state": 0 },
+    "clk_x7": { "state": 0 }, "clk_y7": { "state": 0 }, "clk_r7": { "state": 0 }, "clk_v7": { "state": 0 },
+    "clk_x8": { "state": 0 }, "clk_y8": { "state": 0 }, "clk_r8": { "state": 0 }, "clk_v8": { "state": 0 },
+    "clk_x9": { "state": 0 }, "clk_y9": { "state": 0 }, "clk_r9": { "state": 0 }, "clk_v9": { "state": 0 },
+    "clk_x10": { "state": 0 }, "clk_y10": { "state": 0 }, "clk_r10": { "state": 0 }, "clk_v10": { "state": 0 },
+    "clk_x11": { "state": 0 }, "clk_y11": { "state": 0 }, "clk_r11": { "state": 0 }, "clk_v11": { "state": 0 },
+    "ch_port": { "state": 0 }, "ch_pt": { "state": 0 }, "ch_who": { "state": "1_1_3" }, "ch_blink": { "state": 0 },
+    "ch_open": { "state": 0 }, "ch_text": { "state": 0 }, "ch_n": { "state": 2 }, "ch_cursor": { "state": 0 }, "ch_bar": { "state": "#428AFF" },
+    "ch_t0": { "state": "" }, "ch_t1": { "state": "" }, "ch_t2": { "state": "" }, "ch_t3": { "state": "" },
+    "ch_t4": { "state": "" }, "ch_t5": { "state": "" }, "ch_t6": { "state": "" }, "ch_t7": { "state": "" },
+    "ch_f0": { "state": "white" }, "ch_f1": { "state": "white" }, "ch_f2": { "state": "white" }, "ch_f3": { "state": "white" },
+    "ch_f4": { "state": "white" }, "ch_f5": { "state": "white" }, "ch_f6": { "state": "white" }, "ch_f7": { "state": "white" },
+    "v0": { "state": 1 }, "v1": { "state": 0 }, "v2": { "state": 1 },
+    "v3": { "state": 1 }, "v4": { "state": 0 }, "v5": { "state": 0 },
+    "busy": { "state": 0 },
+  },
+  "colors": {
+    "cfg_header": "#2695FF",
+    "cfg_body": "#6CB0F9",
+    "cfg_dark": "#003B5D",
+    "cfg_yellow": "#FFC347",
+    "sel_him": "#509BF9",
+    "sel_her": "#FB8BDE",
+    "sel_him_dark": "#1E83FE",
+    "sel_her_dark": "#F961D2",
+  },
+  "start": "home",
+  "pages": {
+    "home": {
+      "bg": "#000000",
+      "widgets": [
+        // ---- The Dark Hour (game flag 0x1429, scripts/main.lua): this screen fades to its green and stays.
+        { "type": "rect", "rect": [0, 0, 1240, 1080], "bg": "#001400", "opacity": "dh_tint" },
+        // ---- the title: the game's own art (assets/game, built by gungnir/tools/p3p_assets.py) at the
+        // top screen's 4x, rearranged for this narrower canvas. Each part fades in when the game's does.
+        { "type": "group", "rect": [0, 0, 1240, 1080], "visible": "screen != 'idle' && screen != 'select'", "children": [
+          { "type": "rect", "rect": [0, 0, 1240, 1080], "bg": "#020328", "opacity": "fade_art" },
+          { "type": "image", "rect": [0, 0, 1240, 1080], "src": "assets/gradient.png", "fill": "stretch", "opacity": "fade_bg * breath" },
+          { "type": "image", "rect": ["300 + 180 * (1 - fade_bg)", -216, 1024, 1024], "src": "assets/game/moon.png", "fill": "stretch", "opacity": "fade_bg" },
+          { "type": "image", "rect": [740, 584, 512, 512], "src": "assets/game/creature.png", "fill": "stretch", "opacity": "fade_bg" },
+          // The other protagonist from the game's, swapping as the game's do.
+          { "type": "image", "rect": ["-200 + female_dx", -21, 1024, 1126], "src": "assets/game/art_female.png", "fill": "stretch", "opacity": "fade_art * female_op" },
+          { "type": "image", "rect": ["-200 + male_dx", -21, 1024, 1126], "src": "assets/game/art_male.png", "fill": "stretch", "opacity": "fade_art * male_op" },
+
+          // PRESS ANY BUTTON: anywhere is the button.
+          { "type": "rect", "rect": [0, 0, 1240, 1080], "visible": "screen == 'pab'", "on_tap": { "call": "tap_any" } },
+          { "type": "image", "rect": [576, 872, 604, 36], "src": "assets/game/text_pab.png", "fill": "stretch", "visible": "screen == 'fade' || screen == 'pab'", "opacity": "fade_text" },
+
+          // The menu: the items in white; the game's pill slides to the chosen one as the game's does
+          // (following its eased position), and the text it covers is dark. It fades out under Config, and
+          // back, as the game's does.
+          { "type": "group", "rect": [0, 0, 1240, 1080], "visible": "screen == 'menu' || screen == 'config'", "opacity": "menu_op", "children": [
+            { "type": "image", "rect": [720, 792, 328, 32], "src": "assets/game/text_new.png", "fill": "stretch", "tint": "#F4F4F4" },
+            { "type": "image", "rect": [700, 844, 360, 32], "src": "assets/game/text_load.png", "fill": "stretch", "tint": "#F4F4F4" },
+            { "type": "image", "rect": [760, 894, 236, 36], "src": "assets/game/text_config.png", "fill": "stretch", "tint": "#F4F4F4" },
+            { "type": "image", "rect": [692, 946, 380, 36], "src": "assets/game/text_install.png", "fill": "stretch", "tint": "#F4F4F4" },
+            { "type": "group", "rect": [644, "784 + 52 * pill", 476, 48], "clip": true, "children": [
+              { "type": "image", "rect": [0, 0, 40, 48], "src": "assets/game/pill_left.png", "fill": "stretch" },
+              { "type": "rect", "rect": [40, 0, 396, 48], "bg": "#FEFEFE" },
+              { "type": "image", "rect": [436, 0, 40, 48], "src": "assets/game/pill_right.png", "fill": "stretch" },
+              { "type": "image", "rect": [76, "8 - 52 * pill", 328, 32], "src": "assets/game/text_new.png", "fill": "stretch", "tint": "#0F0F30" },
+              { "type": "image", "rect": [56, "60 - 52 * pill", 360, 32], "src": "assets/game/text_load.png", "fill": "stretch", "tint": "#0F0F30" },
+              { "type": "image", "rect": [116, "110 - 52 * pill", 236, 36], "src": "assets/game/text_config.png", "fill": "stretch", "tint": "#0F0F30" },
+              { "type": "image", "rect": [48, "162 - 52 * pill", 380, 36], "src": "assets/game/text_install.png", "fill": "stretch", "tint": "#0F0F30" },
+            ] },
+            // Taps: each item's whole row, wider than its pill.
+            { "type": "rect", "rect": [560, 778, 680, 52], "on_tap": { "call": "tap_menu", "args": [0] } },
+            { "type": "rect", "rect": [560, 830, 680, 52], "on_tap": { "call": "tap_menu", "args": [1] } },
+            { "type": "rect", "rect": [560, 882, 680, 52], "on_tap": { "call": "tap_menu", "args": [2] } },
+            { "type": "rect", "rect": [560, 934, 680, 52], "on_tap": { "call": "tap_menu", "args": [3] } },
+          ] },
+
+          { "type": "image", "rect": [696, 1028, 504, 48], "src": "assets/game/text_copyright.png", "fill": "stretch",
+            "opacity": "fade_text * (screen == 'config' ? menu_op : 1)" },
+        ] },
+
+        // ---- Config: the game's own look (assets/game/cfg_*, built by gungnir/tools/p3p_assets.py) at 4x,
+        // moved 340 px left to fit; the CONFIG word and the button prompts moved in further. Over the title,
+        // fading in and out as the game's does: the panel (cfg_panel), then its rows (cfg_rows).
+        { "type": "group", "rect": [0, 0, 1240, 1080], "visible": "screen == 'config'", "children": [
+          { "type": "rect", "rect": [0, 76, 1240, 80], "bg": "cfg_header", "opacity": "cfg_panel" },
+          { "type": "rect", "rect": [0, 156, 1240, 848], "bg": "cfg_body", "opacity": "cfg_panel" },
+          { "type": "rect", "rect": [124, 156, 28, 20], "bg": "cfg_dark", "opacity": "cfg_panel" },
+          { "type": "image", "rect": [40, 80, 576, 80], "src": "assets/game/cfg_title.png", "fill": "stretch", "tint": "#C0E3FB", "opacity": "cfg_panel" },
+
+          // Each row: its bar and underline, or the dark plate when it's selected; its name (tap: select it).
+          { "type": "group", "repeat": "7", "rect": [0, "185 + 92 * {i}", 1240, 78], "opacity": "cfg_rows", "children": [
+            { "type": "rect", "rect": [124, 0, 28, 78], "bg": "cfg_dark", "visible": "row != {i}" },
+            { "type": "rect", "rect": [152, 72, 657, 6], "bg": "cfg_dark", "visible": "row != {i}" },
+            { "type": "rect", "rect": [809, 0, 319, 78], "bg": "cfg_dark", "visible": "row != {i}" },
+            { "type": "rect", "rect": [124, -8, 1016, 94], "bg": "cfg_dark", "radius": 3, "visible": "row == {i}" },
+            { "type": "image", "rect": [152, -13, 600, 105], "src": "assets/game/cfg_label_{i}.png", "fill": "none",
+              "tint": "row == {i} ? '#FFFFFF' : '#003B5D'" },
+            { "type": "rect", "rect": [124, -8, 685, 94], "on_tap": { "call": "tap_row", "args": ["{i}"] } },
+          ] },
+
+          // The six switches: the yellow half on the side that's set, with the slanted edge; NONE for Auto
+          // Text while Voices is OFF. Tap ON or OFF to set it.
+          { "type": "group", "repeat": "6", "rect": [0, "185 + 92 * {i}", 1240, 78], "opacity": "cfg_rows", "children": [
+            { "type": "shape", "rect": [809, 0, 319, 78], "antialias": true, "visible": "{i} != 1 || v0 == 1", "shapes": [
+              { "kind": "polygon", "points": [[0, 0], [195, 0], [117, 78], [0, 78]], "fill": "cfg_yellow", "visible": "v{i} == 1" },
+              { "kind": "polygon", "points": [[195, 0], [319, 0], [319, 78], [117, 78]], "fill": "cfg_yellow", "visible": "v{i} == 0" },
+            ] },
+            { "type": "image", "rect": [848, 27, 68, 28], "src": "assets/game/cfg_on.png", "fill": "stretch", "visible": "{i} != 1 || v0 == 1",
+              "tint": "v{i} == 1 ? '#003B5D' : '#2695FF'" },
+            { "type": "image", "rect": [1008, 27, 96, 28], "src": "assets/game/cfg_off.png", "fill": "stretch", "visible": "{i} != 1 || v0 == 1",
+              "tint": "v{i} == 0 ? '#003B5D' : '#2695FF'" },
+            { "type": "image", "rect": [900, 27, 136, 28], "src": "assets/game/cfg_none.png", "fill": "stretch", "visible": "{i} == 1 && v0 == 0", "tint": "#2695FF" },
+            { "type": "rect", "rect": [809, -8, 160, 94], "on_tap": { "call": "tap_switch", "args": ["{i}", 1] } },
+            { "type": "rect", "rect": [969, -8, 171, 94], "on_tap": { "call": "tap_switch", "args": ["{i}", 0] } },
+          ] },
+
+          // Confirm: OK.
+          { "type": "image", "rect": [932, 764, 68, 28], "src": "assets/game/cfg_ok.png", "fill": "stretch", "tint": "#2695FF", "opacity": "cfg_rows" },
+          { "type": "rect", "rect": [809, 729, 331, 94], "on_tap": { "call": "tap_confirm" } },
+
+          // The selected row's help.
+          { "type": "image", "rect": [128, 852, 32, 28], "src": "assets/game/cfg_arrow.png", "fill": "stretch", "tint": "#003B5D", "opacity": "cfg_rows" },
+          { "type": "image", "rect": [156, 813, 1000, 160], "src": "assets/game/cfg_help_{row}.png", "fill": "none", "tint": "#003B5D", "opacity": "cfg_rows" },
+
+          // The game's button prompts; Back is tappable.
+          { "type": "group", "rect": [0, 1004, 1240, 76], "opacity": "cfg_panel", "children": [
+            { "type": "image", "rect": [560, 12, 76, 68], "src": "assets/game/cfg_dpad.png", "fill": "stretch" },
+            { "type": "image", "rect": [626, 11, 172, 60], "src": "assets/game/cfg_switch.png", "fill": "stretch" },
+            { "type": "image", "rect": [872, 12, 64, 64], "src": "assets/game/cfg_x.png", "fill": "stretch" },
+            { "type": "image", "rect": [928, 16, 84, 68], "src": "assets/game/cfg_okword.png", "fill": "stretch" },
+            { "type": "image", "rect": [1044, 12, 64, 64], "src": "assets/game/cfg_o.png", "fill": "stretch" },
+            { "type": "image", "rect": [1100, 12, 120, 60], "src": "assets/game/cfg_back.png", "fill": "stretch" },
+          ] },
+          { "type": "rect", "rect": [1030, 1004, 210, 76], "on_tap": { "call": "tap_back" } },
+        ] },
+
+        // ---- NEW GAME: black as the title fades out; then the protagonist select fades in from black as the game's
+        // does, laid out as its screen: Orpheus-M on the left in blue, Orpheus-F on the right in pink, white
+        // between. Each touches the top and bottom, its outer side off the screen, at 1:1 so its edges stay
+        // smooth (gungnir/tools/p3p_assets.py scales them). A trail of copies runs outward from each in colour;
+        // the one not hovered goes flat in its colour, from the middle out, its trail drawn in.
+        { "type": "group", "rect": [0, 0, 1240, 1080], "visible": "screen == 'newgame' || screen == 'select'", "children": [
+          { "type": "group", "rect": [0, 0, 1240, 1080], "visible": "screen == 'select'", "children": [
+            { "type": "rect", "rect": [0, 0, 1240, 1080], "bg": "#FFFFFF" },
+            { "type": "group", "rect": [0, 0, 1240, 1080], "children": [
+              // Each colour from its edge to a line through its Orpheus, from where the figure touches the top to a
+              // foot (gungnir/tools/p3p_assets.py prints the points, in the picture's own pixels), and white masks
+              // the other side of the line over the trails, so neither shows a seam.
+              { "type": "shape", "rect": ["-1200 + him_dx", 0, 1885, 1080], "antialias": true, "shapes": [
+                { "kind": "polygon", "points": [[0, -2],[1332, -2],[1341, 40],[1351, 80],[1360, 120],[1370, 160],[1379, 200],[1389, 240],[1398, 280],[1408, 320],[1417, 360],[1427, 400],[1419, 440],[1415, 480],[1449, 520],[1465, 560],[1474, 600],[1481, 640],[1542, 680],[1478, 720],[1504, 760],[1522, 800],[1531, 840],[1541, 880],[1550, 920],[1560, 960],[1569, 1000],[1579, 1040],[1588, 1082],[0, 1082]], "fill": "sel_him" } ] },
+              { "type": "shape", "rect": ["615 - her_dx", 0, 2000, 1080], "antialias": true, "shapes": [
+                { "kind": "polygon", "points": [[356, -2],[354, 40],[357, 80],[349, 120],[346, 160],[344, 200],[342, 240],[339, 280],[337, 320],[279, 360],[291, 400],[329, 440],[327, 480],[370, 520],[346, 560],[320, 600],[317, 640],[325, 680],[328, 720],[337, 760],[330, 800],[316, 840],[303, 880],[301, 920],[281, 960],[277, 1000],[292, 1040],[291, 1082],[1900, 1082],[1900, -2]], "fill": "sel_her" } ] },
+              { "type": "image", "repeat": "4", "visible": "him_flat < 1", "rect": ["-200 + him_dx - 80 * trail_d{i} * (1 - him_flat)", 0, 825, 1080],
+                "src": "assets/game/orpheus_male_flat.png", "fill": "stretch", "tint": "mix('#1579F4', '#509BF9', trail_f{i})" },
+              { "type": "image", "repeat": "4", "visible": "her_flat < 1", "rect": ["615 - her_dx + 80 * trail_d{i} * (1 - her_flat)", 0, 927, 1080],
+                "src": "assets/game/orpheus_female_flat.png", "fill": "stretch", "tint": "mix('#F059C9', '#FB8BDE', trail_f{i})" },
+              { "type": "shape", "rect": ["-200 + him_dx", 0, 885, 1080], "antialias": true, "shapes": [
+                { "kind": "polygon", "points": [[332, -2],[341, 40],[351, 80],[360, 120],[370, 160],[379, 200],[389, 240],[398, 280],[408, 320],[417, 360],[427, 400],[419, 440],[415, 480],[449, 520],[465, 560],[474, 600],[481, 640],[542, 680],[478, 720],[504, 760],[522, 800],[531, 840],[541, 880],[550, 920],[560, 960],[569, 1000],[579, 1040],[588, 1082],[885, 1082],[885, -2]], "fill": "#FFFFFF" } ] },
+              { "type": "shape", "rect": ["555 - her_dx", 0, 987, 1080], "antialias": true, "shapes": [
+                { "kind": "polygon", "points": [[0, -2],[416, -2],[414, 40],[417, 80],[409, 120],[406, 160],[404, 200],[402, 240],[399, 280],[397, 320],[339, 360],[351, 400],[389, 440],[387, 480],[430, 520],[406, 560],[380, 600],[377, 640],[385, 680],[388, 720],[397, 760],[390, 800],[376, 840],[363, 880],[361, 920],[341, 960],[337, 1000],[352, 1040],[351, 1082],[0, 1082]], "fill": "#FFFFFF" } ] },
+              // Each Orpheus: its drop shadow and outline, in colour, and its flat colour wiping across from the middle.
+              { "type": "group", "rect": ["-200 + him_dx", 0, 825, 1080], "children": [
+                { "type": "image", "rect": [-60, -60, 945, 1200], "src": "assets/game/orpheus_male_shadow.png", "fill": "stretch" },
+                { "type": "image", "rect": [-6, -6, 837, 1092], "src": "assets/game/orpheus_male_edge.png", "fill": "stretch", "tint": "sel_him_dark" },
+                { "type": "image", "rect": [0, 0, 825, 1080], "src": "assets/game/orpheus_male_full.png", "fill": "stretch" },
+                { "type": "group", "rect": ["825 * (1 - him_flat)", 0, "825 * him_flat", 1080], "clip": true, "visible": "him_flat > 0", "children": [
+                  { "type": "image", "rect": ["-825 * (1 - him_flat)", 0, 825, 1080], "src": "assets/game/orpheus_male_flat.png", "fill": "stretch", "tint": "sel_him_dark" },
+                ] },
+              ] },
+              { "type": "group", "rect": ["615 - her_dx", 0, 927, 1080], "children": [
+                { "type": "image", "rect": [-60, -60, 1047, 1200], "src": "assets/game/orpheus_female_shadow.png", "fill": "stretch" },
+                { "type": "image", "rect": [-6, -6, 939, 1092], "src": "assets/game/orpheus_female_edge.png", "fill": "stretch", "tint": "sel_her_dark" },
+                { "type": "image", "rect": [0, 0, 927, 1080], "src": "assets/game/orpheus_female_full.png", "fill": "stretch" },
+                { "type": "group", "rect": [0, 0, "927 * her_flat", 1080], "clip": true, "visible": "her_flat > 0", "children": [
+                  { "type": "image", "rect": [0, 0, 927, 1080], "src": "assets/game/orpheus_female_flat.png", "fill": "stretch", "tint": "sel_her_dark" },
+                ] },
+              ] },
+            ] },
+          ] },
+          // Black over it all, fading as the game's screen does: in as the title goes, out as the select comes in,
+          // and in again as the story begins. One layer, so nothing under it shows through anything else.
+          { "type": "rect", "rect": [0, 0, 1240, 1080], "bg": "#000000", "opacity": "shade" },
+          // Taps: his half and hers (hover, then choose).
+          { "type": "rect", "rect": [0, 0, 620, 1080], "visible": "screen == 'select'", "on_tap": { "call": "tap_pick", "args": [0] } },
+          { "type": "rect", "rect": [620, 0, 620, 1080], "visible": "screen == 'select'", "on_tap": { "call": "tap_pick", "args": [1] } },
+        ] },
+        // ---- The home screen (scripts/home.lua): what this screen shows most of the time once a game is under way, in
+        // the look of the game's menus and in the protagonist's colours. Left: the protagonist (level, HP and SP, mood),
+        // their Persona, their social stats and funds. Right: the month's calendar (today, Sundays and holidays, the
+        // moon), a tapped day's note and what's coming up; or, switched in the header, the social links begun so far,
+        // a tapped one's details below. Written in the game's font (gungnir/tools/p3p_home.py). The boxes with only a
+        // border stand where the game's art will go.
+        { "type": "group", "rect": [0, 0, 1240, 1080], "visible": "home_on", "opacity": "home_op", "children": [
+          { "type": "group", "repeat": "2", "repeat_var": "g", "rect": [0, 0, 1240, 1080], "visible": "female == {g}", "children": [
+            { "type": "rect", "rect": [0, 0, 1240, 1080], "bg": "{g} ? '#F7A3C4' : '#2E8FF0'" },
+            { "type": "rect", "rect": [0, 0, 24, 1080], "bg": "#F5B630" },
+            { "type": "rect", "rect": [24, 0, 1216, 88], "bg": "{g} ? '#7A1033' : '#00305A'" },
+            { "type": "label", "rect": [48, 10, 400, 70], "text": "STATUS", "font": "assets/game/font_home_gold.json", "size": 104, "scale_x": 1.3, "origin": [0, 0.5] },
+            // The switch between the calendar and the social links, its side in use filled.
+            { "type": "rect", "rect": [836, 16, 380, 56], "border": 3, "border_color": "#F5B630", "radius": 8 },
+            { "type": "rect", "rect": ["839 + 187 * home_view", 19, 187, 50], "bg": "#F5B630", "radius": 6 },
+            { "type": "label", "rect": [839, 24, 187, 40], "text": "CALENDAR", "font": "assets/game/font_home_ink{g}.json", "size": 52, "text_align": "center", "visible": "home_view == 0" },
+            { "type": "label", "rect": [839, 24, 187, 40], "text": "CALENDAR", "font": "assets/game/font_home_gold.json", "size": 52, "text_align": "center", "visible": "home_view == 1" },
+            { "type": "label", "rect": [1026, 24, 187, 40], "text": "S.LINK", "font": "assets/game/font_home_gold.json", "size": 52, "text_align": "center", "visible": "home_view == 0" },
+            { "type": "label", "rect": [1026, 24, 187, 40], "text": "S.LINK", "font": "assets/game/font_home_ink{g}.json", "size": 52, "text_align": "center", "visible": "home_view == 1" },
+            { "type": "rect", "rect": [836, 16, 190, 56], "on_tap": { "set": { "home_view": 0 } } },
+            { "type": "rect", "rect": [1026, 16, 190, 56], "on_tap": { "set": { "home_view": 1 } } },
+            // The protagonist: level and name, HP and SP, and mood under the panel's corner, as on the game's menu.
+            { "type": "rect", "rect": [44, 108, 560, 196], "bg": "{g} ? '#FFD3E2' : '#73B5F7'", "radius": 12 },
+            { "type": "label", "rect": [68, 127, 70, 30], "text": "PLV", "font": "assets/game/font_home_ink{g}.json", "size": 52 },
+            { "type": "label", "rect": [140, 88, 60, 90], "text": "{h_lv}", "font": "assets/game/font_home_ink{g}.json", "size": 104 },
+            { "type": "label", "rect": [204, 88, 380, 90], "text": "{h_name}", "font": "assets/game/font_home_ink{g}.json", "size": 104, "scale_x": "h_name_s", "scale_y": "h_name_s", "origin": [0, 0.8] },
+            { "type": "label", "rect": [68, 250, 150, 30], "text": "NEXT EXP", "font": "assets/game/font_home_ink{g}.json", "size": 52 },
+            { "type": "label", "rect": [262, 250, 100, 30], "text": "{h_next}", "font": "assets/game/font_home_ink{g}.json", "size": 52 },
+            { "type": "rect", "rect": [60, 172, 528, 6], "bg": "{g} ? '#F07AA4' : '#4FA8F5'" },
+            { "type": "label", "rect": [68, 176, 50, 30], "text": "HP", "font": "assets/game/font_home_ink{g}.json", "size": 52 },
+            { "type": "label", "rect": [120, 176, 150, 30], "text": "{h_hp} / {h_maxhp}", "font": "assets/game/font_home_ink{g}.json", "size": 52 },
+            { "type": "rect", "rect": [276, 196, 296, 12], "bg": "{g} ? '#7A1033' : '#00305A'", "radius": 6 },
+            { "type": "rect", "rect": [276, 196, "296 * h_hpf", 12], "bg": "#F2A23C", "radius": 6 },
+            { "type": "label", "rect": [68, 214, 50, 30], "text": "SP", "font": "assets/game/font_home_ink{g}.json", "size": 52 },
+            { "type": "label", "rect": [120, 214, 150, 30], "text": "{h_sp} / {h_maxsp}", "font": "assets/game/font_home_ink{g}.json", "size": 52 },
+            { "type": "rect", "rect": [276, 234, 296, 12], "bg": "{g} ? '#7A1033' : '#00305A'", "radius": 6 },
+            { "type": "rect", "rect": [276, 234, "296 * h_spf", 12], "bg": "#A77BEA", "radius": 6 },
+            { "type": "rect", "rect": [384, 262, 208, 54], "bg": "{g} ? '#FFD3E2' : '#73B5F7'", "radius": 27 },
+            { "type": "image", "rect": [364, 246, 88, 84], "src": "assets/game/mood_{h_cond}.png" },
+            { "type": "label", "rect": [460, 264, 130, 40], "text": "{h_mood}", "font": "assets/game/font_home_acc{g}.json", "size": 52 },
+            // The Persona, its headshot to the right.
+            { "type": "rect", "rect": [44, 332, 560, 164], "bg": "{g} ? '#FFD3E2' : '#73B5F7'", "radius": 12 },
+            // Panel high, fading out to the left, its right corners rounded with the panel's.
+            { "type": "image", "rect": [384, 332, 220, 164], "src": "assets/game/ps_{p_id}.png" },
+            { "type": "label", "rect": [68, 352, 50, 30], "text": "LV", "font": "assets/game/font_home_ink{g}.json", "size": 52 },
+            { "type": "label", "rect": [126, 312, 60, 90], "text": "{p_lv}", "font": "assets/game/font_home_ink{g}.json", "size": 104 },
+            { "type": "label", "rect": [184, 312, 270, 90], "text": "{p_name}", "font": "assets/game/font_home_ink{g}.json", "size": 104, "scale_x": "p_name_s", "scale_y": "p_name_s", "origin": [0, 0.8] },
+            { "type": "rect", "rect": [60, 398, 380, 6], "bg": "{g} ? '#F07AA4' : '#4FA8F5'" },
+            { "type": "label", "rect": [60, 404, 380, 40], "text": "{p_arc}", "font": "assets/game/font_home_ink{g}.json", "size": 52, "text_align": "center" },
+            { "type": "label", "rect": [60, 444, 380, 40], "text": "NEXT EXP  {p_next}", "font": "assets/game/font_home_ink{g}.json", "size": 52, "text_align": "center" },
+            // Social stats: each with its rank in pips and the game's name for it.
+            { "type": "rect", "rect": [44, 520, 560, 448], "bg": "{g} ? '#FFD3E2' : '#73B5F7'", "radius": 12 },
+            { "type": "group", "repeat": "3", "repeat_var": "k", "rect": [44, "520 + 148 * {k}", 560, 148], "children": [
+              { "type": "rect", "rect": [16, 146, 528, 6], "bg": "{g} ? '#F07AA4' : '#4FA8F5'", "visible": "{k} < 2" },
+              { "type": "image", "rect": [14, 26, 192, 90], "src": "assets/game/kanji_{k}.png", "tint": "{g} ? '#A8274F' : '#1F5C9E'" },
+              { "type": "label", "rect": [222, 6, 320, 30], "text": "{=({k} == 0) ? 'ACADEMICS' : (({k} == 1) ? 'CHARM' : 'COURAGE')}", "font": "assets/game/font_home_acc{g}.json", "size": 52 },
+              { "type": "rect", "repeat": "6", "repeat_var": "p", "rect": ["222 + 50 * {p}", 50, 44, 8], "bg": "st_r{k} > {p} ? '#F5B630' : ({g} ? '#A8274F' : '#1F5C9E')" },
+              { "type": "label", "rect": [222, 40, 320, 90], "text": "{st_w{k}}", "font": "assets/game/font_home_ink{g}.json", "size": 104, "scale_x": "st_s{k}", "scale_y": "st_s{k}", "origin": [0, 0.8] },
+            ] },
+            { "type": "rect", "rect": [50, 1000, 18, 18], "bg": "{g} ? '#7A1033' : '#00305A'" },
+            { "type": "label", "rect": [82, 958, 520, 90], "text": "{h_funds} yen", "font": "assets/game/font_home_ink{g}.json", "size": 104 },
+            // ---- Right: the calendar.
+            { "type": "group", "rect": [628, 96, 588, 972], "visible": "home_view == 0", "children": [
+              { "type": "label", "rect": [8, 14, 300, 30], "text": "{cal_title}", "font": "assets/game/font_home_ink{g}.json", "size": 52 },
+              { "type": "label", "repeat": "7", "repeat_var": "w", "rect": ["84 * {w}", 40, 82, 30], "text_align": "center", "size": 52,
+                "text": "{=({w} == 0) ? 'Su' : (({w} == 1) ? 'M' : (({w} == 2) ? 'Tu' : (({w} == 3) ? 'W' : (({w} == 4) ? 'Th' : (({w} == 5) ? 'F' : 'Sa')))))}",
+                "font": "assets/game/font_home_ink{g}.json", "visible": "{w} > 0 && {w} < 6" },
+              { "type": "label", "rect": [0, 40, 82, 30], "text": "Su", "text_align": "center", "font": "assets/game/font_home_red.json", "size": 52 },
+              { "type": "label", "rect": [504, 40, 82, 30], "text": "Sa", "text_align": "center", "font": "assets/game/font_home_blue.json", "size": 52 },
+              { "type": "group", "repeat": "42", "repeat_var": "c", "rect": ["84 * ({c} % 7)", "84 + 92 * ({c} / 7)", 82, 88],
+                "visible": "cal_d{c} != '' && {c} / 7 < cal_rows", "children": [
+                { "type": "rect", "rect": [0, 0, 82, 88], "bg": "cal_k{c} == 3 ? ({g} ? '#7A1033' : '#00305A') : (cal_k{c} == 1 ? ({g} ? '#F2C9A8' : '#D6B4A0') : ({g} ? '#FBC2D7' : '#8EC4FA'))" },
+                { "type": "label", "rect": [6, 4, 70, 30], "text": "{cal_d{c}}", "font": "assets/game/font_home_ink{g}.json", "size": 52, "visible": "cal_k{c} == 0" },
+                { "type": "label", "rect": [6, 4, 70, 30], "text": "{cal_d{c}}", "font": "assets/game/font_home_red.json", "size": 52, "visible": "cal_k{c} == 1" },
+                { "type": "label", "rect": [6, 4, 70, 30], "text": "{cal_d{c}}", "font": "assets/game/font_home_blue.json", "size": 52, "visible": "cal_k{c} == 2" },
+                { "type": "label", "rect": [6, 4, 70, 30], "text": "{cal_d{c}}", "font": "assets/game/font_home_white.json", "size": 52, "visible": "cal_k{c} == 3" },
+                // The moon: full, half (the left half covered) and new.
+                { "type": "rect", "rect": [46, 52, 28, 28], "radius": 14, "bg": "#FFC23A", "visible": "cal_m{c} == 1 || cal_m{c} == 2" },
+                { "type": "group", "rect": [46, 52, 14, 28], "clip": true, "visible": "cal_m{c} == 2", "children": [
+                  { "type": "rect", "rect": [0, 0, 28, 28], "radius": 14, "bg": "{g} ? '#F7A3C4' : '#2E8FF0'" },
+                ] },
+                { "type": "rect", "rect": [46, 52, 28, 28], "radius": 14, "bg": "{g} ? '#F7A3C4' : '#2E8FF0'", "border": 2, "border_color": "{g} ? '#A8274F' : '#1F5C9E'", "visible": "cal_m{c} == 3" },
+                { "type": "rect", "rect": [0, 0, 82, 88], "border": 4, "border_color": "#F5B630", "visible": "cal_sel == {c}" },
+                { "type": "rect", "rect": [0, 0, 82, 88], "on_tap": { "call": "tap_cal_day", "args": ["{c}"] } },
+              ] },
+              // The day tapped (today until one is), then what's coming up.
+              { "type": "group", "rect": [0, "92 + 92 * cal_rows", 588, "880 - 92 * cal_rows"], "children": [
+                { "type": "rect", "rect": [0, 0, 588, "880 - 92 * cal_rows"], "bg": "{g} ? '#FFD3E2' : '#73B5F7'", "radius": 12 },
+                { "type": "rect", "rect": [16, 14, 556, 44], "bg": "{g} ? '#7A1033' : '#00305A'", "radius": 8 },
+                { "type": "label", "rect": [32, 12, 400, 30], "text": "{cal_sel_date}", "font": "assets/game/font_home_white.json", "size": 52 },
+                { "type": "label", "rect": [24, 70, 540, 30], "text": "{cal_note}", "font": "assets/game/font_home_ink{g}.json", "size": 52 },
+                { "type": "label", "rect": [24, 116, 300, 30], "text": "COMING UP", "font": "assets/game/font_home_acc{g}.json", "size": 52, "visible": "cal_ups > 0" },
+                { "type": "group", "repeat": "3", "repeat_var": "u", "rect": [24, "152 + 46 * {u}", 540, 46], "visible": "{u} < cal_ups", "children": [
+                  { "type": "label", "rect": [0, 4, 420, 30], "text": "{cal_up{u}}", "font": "assets/game/font_home_ink{g}.json", "size": 52 },
+                  { "type": "label", "rect": [420, 4, 120, 30], "text": "{cal_upd{u}}", "font": "assets/game/font_home_ink{g}.json", "size": 52, "text_align": "right" },
+                  { "type": "rect", "rect": [0, 40, 540, 4], "bg": "{g} ? '#F07AA4' : '#4FA8F5'" },
+                ] },
+              ] },
+            ] },
+            // ---- Right: the social links begun, in the game's order (by arcana), and a tapped one's details.
+            { "type": "group", "rect": [628, 104, 588, 960], "visible": "home_view == 1", "children": [
+              { "type": "group", "repeat": "7", "repeat_var": "r", "rect": [0, "98 * {r}", 588, 92], "visible": "sl_top + {r} < sl_n", "children": [
+                { "type": "rect", "rect": [0, 0, 588, 92], "bg": "{g} ? '#7A1033' : '#00305A'", "radius": 6 },
+                { "type": "image", "rect": [12, 10, 56, 72], "src": "assets/game/card_s_{sl_card{r}}.png" },
+                { "type": "label", "rect": [84, 10, 180, 30], "text": "{sl_rank{r}}", "font": "assets/game/font_home_white.json", "size": 52 },
+                { "type": "label", "rect": [84, 46, 180, 30], "text": "{sl_arc{r}}", "font": "assets/game/font_home_gold.json", "size": 52 },
+                { "type": "label", "rect": [270, 28, 310, 30], "text": "{sl_name{r}}", "font": "assets/game/font_home_white.json", "size": 52, "scale_x": "sl_name_s{r}", "scale_y": "sl_name_s{r}", "origin": [0, 0.5] },
+                { "type": "rect", "rect": [0, 0, 588, 92], "border": 4, "border_color": "#F5B630", "radius": 6, "visible": "sl_sel == {r}" },
+                { "type": "rect", "rect": [0, 0, 588, 92], "on_tap": { "call": "tap_link", "args": ["{r}"] } },
+              ] },
+              { "type": "label", "rect": [0, 20, 588, 40], "text": "No Social Links yet.", "font": "assets/game/font_home_ink{g}.json", "size": 52, "visible": "sl_n == 0" },
+              { "type": "group", "rect": [0, 700, 588, 260], "visible": "sl_n > 0", "children": [
+                { "type": "rect", "rect": [0, 0, 588, 252], "bg": "{g} ? '#FFD3E2' : '#73B5F7'", "radius": 12 },
+                { "type": "image", "rect": [16, 16, 176, 220], "src": "assets/game/bust_{sl_s_bust}.png" },
+                { "type": "label", "rect": [216, 22, 360, 30], "text": "{sl_s_name}", "font": "assets/game/font_home_ink{g}.json", "size": 52, "scale_x": "sl_s_name_s", "scale_y": "sl_s_name_s", "origin": [0, 0.5] },
+                { "type": "label", "rect": [216, 64, 360, 30], "text": "{sl_s_arc}", "font": "assets/game/font_home_acc{g}.json", "size": 52 },
+                { "type": "rect", "repeat": "10", "repeat_var": "p", "rect": ["216 + 35 * {p}", 116, 30, 10], "bg": "sl_s_rank > {p} ? '#F5B630' : ({g} ? '#A8274F' : '#1F5C9E')" },
+                { "type": "label", "rect": [216, 140, 360, 30], "text": "Rank {sl_s_rank}", "font": "assets/game/font_home_ink{g}.json", "size": 52 },
+              ] },
+            ] },
+          ] },
+        ] },
+        // ---- The name keyboard (scripts/keyboard.lua), here instead of on the game's screen: the game's own, at 4x
+        // (assets/game/kb_*, built by gungnir/tools/p3p_keyboard.py), two blocks a page, under a copy of the name being
+        // written between the page buttons. Tapping a key types it; Del, L, R and End press the game's buttons, lit
+        // when the game would take them. It comes in over the Dark Hour green on the misty blue of the game's name
+        // screen, building up as the game's does (the frame, then each row); a row the cursor leaves fades back to
+        // blue, and the cursor's glow pulses while it rests. It dims while the game asks "Proceed?", and goes to
+        // black with the game's screen once the name is taken.
+        { "type": "group", "rect": [0, 0, 1240, 1080], "visible": "kb_on", "children": [
+          { "type": "image", "rect": [0, 0, 1240, 1080], "src": "assets/game/kb_bg.png", "fill": "stretch" },
+          { "type": "image", "rect": [96, 216, 1048, 608], "src": "assets/game/kb_frame{kb_page}.png", "opacity": "kb_frame" },
+          { "type": "group", "repeat": "6", "repeat_var": "r", "rect": [96, "312 + 64 * {r}", 1048, "{r} < 5 ? 64 : 96"], "clip": true,
+            "opacity": "kb_row{r}", "children": [
+            { "type": "image", "rect": [0, "-96 - 64 * {r}", 1048, 608], "src": "assets/game/kb_rows{kb_page}.png" },
+          ] },
+          // Rows the cursor has left, going back to blue under their letters.
+          { "type": "group", "repeat": "3", "repeat_var": "n", "rect": ["kb_t{n}_x", "kb_t{n}_y", 440, 76], "clip": true,
+            "visible": "kb_t{n}_op > 0", "children": [
+            { "type": "image", "rect": [0, 0, 440, 76], "src": "assets/game/kb_bar.png", "opacity": "kb_t{n}_op" },
+            { "type": "image", "rect": ["96 - kb_t{n}_x", "216 - kb_t{n}_y", 1048, 608], "src": "assets/game/kb_black{kb_page}.png" },
+          ] },
+          { "type": "group", "rect": [0, 0, 1240, 1080], "visible": "kb_cur", "children": [
+            { "type": "image", "rect": ["kb_bar_x", "kb_bar_y", 440, 76], "src": "assets/game/kb_bar.png" },
+            // Its row's letters over it, the glow, the ball, and the key under the cursor in white, as the game draws them.
+            { "type": "group", "rect": ["kb_bar_x", "kb_bar_y", 440, 76], "clip": true, "children": [
+              { "type": "image", "rect": ["96 - kb_bar_x", "216 - kb_bar_y", 1048, 608], "src": "assets/game/kb_black{kb_page}.png" },
+            ] },
+            { "type": "image", "rect": ["kb_ball_x + 46 - kb_glow_s / 2", "kb_ball_y + 46 - kb_glow_s / 2", "kb_glow_s", "kb_glow_s"],
+              "src": "assets/game/kb_glow.png", "fill": "stretch", "opacity": "kb_glow_op" },
+            { "type": "image", "rect": ["kb_ball_x", "kb_ball_y", 92, 92], "src": "assets/game/kb_ball.png" },
+            { "type": "group", "rect": ["kb_key_x", "kb_key_y", 68, 68], "clip": true, "children": [
+              { "type": "image", "rect": ["96 - kb_key_x", "216 - kb_key_y", 1048, 608], "src": "assets/game/kb_white{kb_page}.png" },
+            ] },
+          ] },
+          // The keys' rows on the page: 2 blocks of 6 rows of 5.
+          { "type": "group", "repeat": "2", "repeat_var": "b", "rect": ["176 + 440 * {b}", 320, 436, 384], "children": [
+            { "type": "group", "repeat": "6", "repeat_var": "r", "rect": [0, "64 * {r}", 436, 64], "children": [
+              { "type": "rect", "repeat": "5", "repeat_var": "c", "rect": ["87 * {c}", 0, 87, 64], "on_tap": { "call": "tap_key", "args": ["{b}", "{r}", "{c}"] } },
+            ] },
+          ] },
+          // The name as the game lays it out: two lines of 8, each letter on its line, the text cursor under the
+          // letter it's on.
+          { "type": "image", "repeat": "16", "visible": "kb_n{i} >= 0", "rect": ["334 + 72 * ({i} % 8)", "40 + 80 * ({i} / 8)", 68, 68],
+            "src": "assets/game/kb_k{kb_n{i}}.png" },
+          { "type": "image", "visible": "kb_tc >= 0", "rect": ["336 + 72 * (kb_tc % 8)", "108 + 80 * (kb_tc / 8)", 64, 20], "src": "assets/game/kb_tcur.png" },
+          { "type": "rect", "repeat": "16", "rect": ["336 + 72 * ({i} % 8)", "112 + 80 * ({i} / 8)", 64, 4], "bg": "#7B8392" },
+          // The buttons, as the game's, lit when it would take them.
+          { "type": "image", "rect": [82, 852, 216, 108], "src": "assets/game/kb_del_{=kb_del ? 'on' : 'off'}.png", "on_tap": { "call": "tap_kb_button", "args": ["circle"] } },
+          { "type": "image", "rect": [334, 862, 196, 88], "src": "assets/game/kb_l_{=kb_l ? 'on' : 'off'}.png", "on_tap": { "call": "tap_kb_button", "args": ["l"] } },
+          { "type": "image", "rect": [566, 862, 196, 88], "src": "assets/game/kb_r_{=kb_r ? 'on' : 'off'}.png", "on_tap": { "call": "tap_kb_button", "args": ["r"] } },
+          { "type": "image", "rect": [798, 852, 360, 108], "src": "assets/game/kb_end_{=kb_end ? 'on' : 'off'}.png", "on_tap": { "call": "tap_kb_button", "args": ["start"] } },
+          { "type": "image", "rect": [24, 74, 144, 88], "src": "assets/game/kb_prev.png", "on_tap": { "call": "tap_kb_page", "args": [-1] } },
+          { "type": "image", "rect": [1072, 74, 144, 88], "src": "assets/game/kb_next.png", "on_tap": { "call": "tap_kb_page", "args": [1] } },
+          // Dimmed while the game asks, the green it came in over going, and black as the game's screen goes.
+          { "type": "rect", "rect": [0, 0, 1240, 1080], "bg": "#000000", "opacity": "kb_dim" },
+          { "type": "rect", "rect": [0, 0, 1240, 1080], "bg": "#001400", "opacity": "kb_green" },
+          { "type": "rect", "rect": [0, 0, 1240, 1080], "bg": "#000000", "opacity": "kb_out" },
+        ] },
+        // ---- A choice in a conversation (Yes/No and the like), here instead of on the game's screen: its box at
+        // the game's size (4x), in the game's colours and font, halfway between the middle of this screen and
+        // its bottom. It opens and closes from its bottom edge as the game's does. An opaque rim (20 px, 43 at the
+        // right, 28 at the bottom) round a panel the scene shows through a little. Tapping an option moves the
+        // cursor to it; tapping the one it's on chooses it.
+        // Whatever is under it fades back as the choice opens (the name keyboard dims itself for its question).
+        { "type": "rect", "rect": [0, 0, 1240, 1080], "bg": "#000000", "opacity": "0.45 * ch_open", "visible": "ch_open > 0 && kb_dim == 0" },
+        // A choice the protagonist makes: they slide and fade in from the right behind the box as it opens, and
+        // back out as it closes, in the outfit they're wearing (assets/game/port_*, gungnir/tools/p3p_home.py),
+        // blinking now and then (the top of their face with the eyes shut, laid over it).
+        // At the game's 4x, standing on the bottom of the screen with their head above the box, partly off the right.
+        { "type": "group", "rect": ["480 + 320 * (1 - ch_pt)", 56, 1024, 1024],
+          "visible": "ch_port && ch_pt > 0", "opacity": "ch_pt", "children": [
+          { "type": "image", "rect": [0, 0, 1024, 1024], "src": "assets/game/port_{ch_who}.png" },
+          { "type": "image", "rect": [0, 144, 1024, 256], "src": "assets/game/port_{ch_who}_b.png", "opacity": "ch_blink", "visible": "ch_blink > 0" },
+        ] },
+        { "type": "group", "rect": [76, "810 - 3 * (60 + 84 * ch_n) / 4", 1088, "60 + 84 * ch_n"], "visible": "ch_open > 0",
+          "scale_y": "ch_open", "origin": [0.5, 1], "children": [
+          { "type": "rect", "rect": [0, "40 + 84 * ch_n", 1088, 28], "bg": "#48000000", "radius": 16 },
+          { "type": "rect", "rect": [0, 0, 1088, "60 + 84 * ch_n"], "border": 20, "border_color": "#C7D0C9", "radius": 16 },
+          { "type": "rect", "rect": [1044, 20, 24, "20 + 84 * ch_n"], "bg": "#C7D0C9" },
+          { "type": "rect", "rect": [20, "32 + 84 * ch_n", 1024, 8], "bg": "#C7D0C9" },
+          { "type": "rect", "rect": [20, 20, 1024, "12 + 84 * ch_n"], "bg": "#E6C7D0C9" },
+          { "type": "rect", "rect": [32, "32 + 84 * ch_cursor", 1000, 80], "bg": "ch_bar", "radius": 6 },
+          { "type": "group", "rect": [0, 0, 1088, "60 + 84 * ch_n"], "visible": "ch_text", "children": [
+            // The game's font (gungnir/tools/p3p_font.py), its letters' ink 61 px in and 23 px below the bar's top.
+            { "type": "label", "repeat": "8", "visible": "{i} < ch_n", "rect": [61, "25 + 84 * {i}", 970, 104], "text": "{ch_t{i}}",
+              "font": "assets/game/font_msg_{ch_f{i}}.json", "size": 104 },
+            { "type": "rect", "repeat": "8", "visible": "{i} < ch_n", "rect": [0, "28 + 84 * {i}", 1088, 84], "on_tap": { "call": "tap_choice", "args": ["{i}"] } },
+          ] },
+        ] },
+        // ---- The Dark Hour clock (scripts/clock.lua): the pieces that fly off the bottom of the game's screen carry on
+        // here, as if this screen were under it; on the green the game turns at midnight, fading out with the game's.
+        // Its pieces' pictures are built by gungnir/tools/p3p_clock.py.
+        { "type": "group", "rect": [0, 0, 1240, 1080], "visible": "clk_on", "children": [
+          { "type": "rect", "rect": [0, 0, 1240, 1080], "bg": "#001400", "opacity": "clk_tint" },
+          { "type": "image", "repeat": "12", "visible": "clk_v{i}", "rect": ["clk_x{i} - 62", "clk_y{i} - 34", 124, 68],
+            "src": "assets/game/clock_numeral_{i}.png", "fill": "stretch", "rotate": "clk_r{i}" },
+          { "type": "shape", "rect": [0, 0, 1240, 1080], "antialias": true, "shapes": [
+            { "kind": "path", "d": "{clk_path}", "fill": "#0C6E2C" } ] },
+        ] },
+      ],
+    },
+  },
+}

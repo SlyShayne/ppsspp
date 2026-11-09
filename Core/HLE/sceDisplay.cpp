@@ -184,6 +184,13 @@ void __DisplayVblankEndCallback(SceUID threadID, SceUID prevCallbackId);
 void __DisplayFlip(int cyclesLate);
 static void __DisplaySetFramerate(void);
 
+// Gungnir: the companion host's frame boundary (android/jni/GungnirHost.cpp).
+static VblankListener g_vblankListener = nullptr;
+
+void __DisplaySetVblankListener(VblankListener listener) {
+	g_vblankListener = listener;
+}
+
 static bool UseAutoFrameSkip() {
 	return g_Config.bAutoFrameSkip && !g_Config.bSkipBufferEffects;
 }
@@ -591,6 +598,11 @@ void hleEnterVblank(u64 userdata, int cyclesLate) {
 	__PowerCheckLockedClock();
 
 	DisplayFireVblankStart();
+
+	// Between the game's frames, before its vblank handlers run: the one place the companion may change memory.
+	if (g_vblankListener) {
+		g_vblankListener();
+	}
 
 	CoreTiming::ScheduleEvent(msToCycles(vblankMs) - cyclesLate, leaveVblankEvent, vbCount + 1);
 

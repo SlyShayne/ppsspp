@@ -41,6 +41,11 @@ int __DisplayGetFrameTimingLimit();
 void Register_sceDisplay_driver();
 void __DisplayWaitForVblanks(const char* reason, int vblanks, bool callbacks = false);
 
+// Called on the emu thread at the start of every vblank, after the game's frame and before its vblank
+// handlers. One listener at a time; nullptr removes it. Used by the Gungnir companion host.
+typedef void (*VblankListener)();
+void __DisplaySetVblankListener(VblankListener listener);
+
 // Kinda hacky, but what can you do... we can't pass it through the jit etc.
 struct DisplayLayoutConfig;
 void __DisplaySetDisplayLayoutConfig(const DisplayLayoutConfig &config);
