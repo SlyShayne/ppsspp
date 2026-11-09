@@ -267,6 +267,12 @@ end
 -- The name keyboard, on this screen instead of the game's (scripts/keyboard.lua).
 local keyboard = pack.require("scripts/keyboard")
 
+-- The home screen, shown most of the time once a game is under way (scripts/home.lua): not over the title,
+-- the clock or the keyboard, and not in the Dark Hour, which keeps its green. It fades in over HOME_FADE frames.
+local home = pack.require("scripts/home")
+local HOME_FADE = 30
+local homeSince = nil
+
 -- Choices in conversations (Yes/No and the like): this screen draws the box, the game's doesn't. Each
 -- message window is in a list (WIN_LIST + 0xC: the first node; a node's +0x4 the next, +0xC its window).
 -- A window's first word is its state: bits 0xC00 are 0x800 while it's asking, and its +0x40 then holds
@@ -388,9 +394,20 @@ function update(info)
     patchChoices()
     choice()
     local keyboardUp = keyboard.update(publish, frame, choiceWindow ~= nil, darkHourTint)
-    darkHour(clock.update(publish, frame), keyboardUp)
+    local clockUp = clock.update(publish, frame)
+    darkHour(clockUp, keyboardUp)
     local phase = mem.u32(TITLE_PHASE)
     local s = screenFor(phase)
+    local homeOn = s == "idle" and screen ~= "newgame" and not keyboardUp and not clockUp
+        and not gameFlag(DARK_HOUR_FLAG) and home.active()
+    if homeOn then
+        homeSince = homeSince or frame
+        home.update(publish, frame)
+    else
+        homeSince = nil
+    end
+    publish("home_on", homeOn and 1 or 0)
+    publish("home_op", homeSince and ramp(frame - homeSince, { 0, HOME_FADE }) or 0)
     -- Between the title going and the select's object coming (about 8 frames), stay black.
     if s == "idle" and screen == "newgame" and frame - blackStart < 120 then s = "newgame" end
     if s == "newgame" and screen ~= "newgame" then blackStart = frame end

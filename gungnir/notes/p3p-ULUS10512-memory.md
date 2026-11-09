@@ -187,6 +187,30 @@ address: `761e13dcd727d831`, `d71abe705af2670d`, `7be1e7f570d06089`), so making 
 rest. After Yes the screen fades to black about 12 frames after the choice closes, over 72, then holds black
 about 40 more before the next scene fades in.
 
+## The protagonist, Personas, social stats and links (the home screen)
+
+Found from the town save (4/22 after school) with the menus open, starting from the CWCheat list for ULUS10512
+(almarsguides.com), whose addresses are these less 0x08000000 plus 0x00800000.
+
+| Address | What |
+|---|---|
+| `0x08E63BCC`, `0x08E63BDE` | Last and first name: 8 letters of 16 bits, 0x80 then ASCII + 0x60 (`0x80AD` M) |
+| `0x08E63BF0` | The protagonist's character record (the party's are `0x08E68BB8 + 0x118 * (character - 2)`, Yukari 2, Aigis 3, Mitsuru 4, Junpei 5, Fuuka 6, Akihiko 7, Ken 8, Shinjiro 9, Koromaru 10): +6 level (byte), +8 HP, +0xA SP, +0x3C/+0x3E/+0x40 Academics, Charm and Courage points (the protagonist's), +0x44 EXP, +0x48 condition: 0 Good, 2 Great, 3 Tired, 5 Sick (1 and 4 draw nothing). A companion's Persona is at +0x88 |
+| `0x08BB911C + 4 * (11 * level + character)` | Base max HP, then SP (u16 each). `0x08A324A0` adds passive skills (0x219, 0x21A, 0x21B, 0x26C, 0x237, 0x238) and accessory boosts (`0x08A2EA6C` with 0x1A..0x1E, 0x8E) |
+| `0x08E68758` | Funds (u32). `0x08E6875C`.. the party's other three slots (character numbers, u16) |
+| `0x08E64C24` | The protagonist's Persona in use: an index into the stock at `0x08E64C28`, 0x34 bytes each: +0 in use, +2 id, +4 level, +8 EXP, +0xC skills (u16 x 8), +0x1C St Ma En Ag Lu (bytes) |
+| `0x08E64ECC + 0x34 * (id - 1)` | The compendium, by id, the same layout |
+| `0x08C54530 + 17 * id` | Persona names. `0x08C5B9C2 + 14 * id` is each one's arcana (1 Fool .. 22 Aeon; the 14-byte entry is its base data) |
+| `0x08E63C44` | Social links begun: 28 records of 16 bytes, +4 the link's id (0 none), +6 its rank. The S.LINK list sorts them by arcana |
+| `[0x08D40EA0] + 8 + 116 * id` | A link's entry: byte +0 its arcana. `[0x08D40EA4] + 8 + 64 * id` its name ("SEES", "Classmate", ...). Both tables are loaded data; the pointers are static |
+| `0x08E64820` | The date: days since 1 April 2009 (u16; `0x08E64818` holds the same). `0x08E6481A` the time of day (byte, 4 After School). 1 April 2009 was a Wednesday |
+| `0x08BF9D0C + max(0, day - 4)` | The moon's age, 0..29: 14 full (the HUD's "Next" counts days to the next 14), 7 and 22 half, 29 new as the calendar draws them |
+| `0x08BF9BEC` | Holidays: (month, day) s16 pairs ending with -1. Sundays and these are red (`0x08819C58`) |
+
+Social stat ranks (`0x0880D184`): the first rank whose cumulative steps the points haven't reached, else 6. The
+steps (from loaded data, `[0x08D40ECC] + 8`): Academics 20, 35, 45, 55, 75; Charm 15, 15, 15, 25, 30; Courage 15, 15,
+15, 15, 20. The rank names are strings at `0x08BA1C9C`.. (Timid .. Badass, Plain .. Charismatic, Slacker .. Genius).
+
 ## Draw lists (not state)
 
 `0x08D60000`–`0x08D80000` and its double buffer `0x08DB0000`–`0x08DD0000` hold the game's per-frame
