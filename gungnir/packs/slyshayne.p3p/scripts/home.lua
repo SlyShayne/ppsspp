@@ -31,6 +31,20 @@ local LINK_INFO, LINK_NAMES = 0x08D40EA0, 0x08D40EA4
 local DAY = 0x08E64820
 local MOON, HOLIDAYS = 0x08BF9D0C, 0x08BF9BEC
 local FEMALE_FLAGS = 0x08E68498  -- bit 7: the female protagonist
+-- EXP. The protagonist's (u32 at +0x44) reaches level L at the u32 at LEVEL_EXP + 4 * L (0x0880E1CC). A
+-- Persona's (u32 at +8 of its record) reaches level L at L^3 * c0 * (growth * c1 + c2) + c3, in floats, with
+-- the constants from PERSONA_EXP and its growth the byte at +3 of its entry in the table [PERSONA_DATA]
+-- (0x08810750; Personas 0xC0..0xDF, the party's, go another way).
+local HERO_EXP = HERO + 0x44
+local LEVEL_EXP = 0x08BBA248
+local PERSONA_EXP, PERSONA_DATA = 0x08BA99A0, 0x08C40CDC
+-- A link's person: the character at +40 of its entry, whose picture is the u16 by character in one table or
+-- the other as the protagonist is (0x08933330).
+local LINK_PERSON = 40
+local BUSTS_HIS, BUSTS_HERS = 0x08BE16E0, 0x08BE1724
+-- Text that would run past its box is shrunk to fit: each letter's advance at size 52 (p3p_home.py).
+local okMetrics, METRICS = pcall(pack.require, "assets/game/font_home_metrics")
+if not okMetrics then METRICS = nil end
 
 -- The social stats' ranks: a rank is passed once the points reach the sum of its steps (from the game's table,
 -- read by 0x08A5D4DC); six ranks each, named as the game names them.
@@ -65,6 +79,31 @@ local frame = 0
 
 local function ram(a)
     return a >= 0x08800000 and a < 0x0A000000
+end
+
+-- The scale that fits [text] at [size] into [width] px (at most 1).
+local function fitScale(text, size, width)
+    if not METRICS then return 1 end
+    local w = 0
+    for k = 1, #text do w = w + (METRICS[text:byte(k)] or 20) end
+    w = w * size / 52
+    return w > width and width / w or 1
+end
+
+-- As the game's single floats round.
+local function f32(x)
+    return (string.unpack("<f", string.pack("<f", x)))
+end
+
+local function personaExp(id, level)
+    local c0, c1, c2, c3 = string.unpack("<ffff", mem.read(PERSONA_EXP, 16))
+    local data = mem.u32(PERSONA_DATA)
+    if not ram(data) then return nil end
+    local g = mem.u8(data + 14 * id + 3)
+    local l = f32(level)
+    local a = f32(f32(l * c0) * l)
+    local b = f32(f32(g * c1) + c2)
+    return math.floor(f32(f32(f32(l * a) * b) + c3))
 end
 
 local function cstring(address, max)
@@ -197,7 +236,8 @@ local function socialLinks(publish)
         if id > 0 and id < 32 and rank > 0 then
             local arcana = ram(info) and mem.s8(info + 8 + 116 * id) or 0
             local name = ram(names) and cstring(names + 8 + 64 * id, 32) or ""
-            links[#links + 1] = { arcana = arcana, rank = rank, name = name }
+            local person = ram(info) and mem.u8(info + 8 + 116 * id + LINK_PERSON) or 0
+            links[#links + 1] = { arcana = arcana, rank = rank, name = name, person = person }
         end
     end
     table.sort(links, function(a, b) return a.arcana < b.arcana end)
@@ -213,6 +253,8 @@ local function socialLinks(publish)
             publish("sl_arc" .. r, ARCANA[l.arcana] or "")
             publish("sl_num" .. r, NUMERALS[l.arcana] or "")
             publish("sl_rank" .. r, "Rank " .. l.rank)
+            publish("sl_card" .. r, l.arcana)
+            publish("sl_name_s" .. r, fitScale(l.name, 52, 300))
         end
     end
     publish("sl_sel", selLink - 1 - linkTop)
@@ -221,6 +263,10 @@ local function socialLinks(publish)
         publish("sl_s_name", s.name)
         publish("sl_s_arc", (NUMERALS[s.arcana] or "") .. " - " .. (ARCANA[s.arcana] or ""))
         publish("sl_s_rank", s.rank)
+        publish("sl_s_name_s", fitScale(s.name, 52, 356))
+        local female = (mem.u32(FEMALE_FLAGS) >> 7) & 1 == 1
+        local bust = s.person < 34 and mem.u16((female and BUSTS_HERS or BUSTS_HIS) + 2 * s.person) or 0
+        publish("sl_s_bust", bust)
     end
 end
 
@@ -242,8 +288,11 @@ function M.update(publish, f)
     if not holidays then readHolidays() end
     publish("female", (mem.u32(FEMALE_FLAGS) >> 7) & 1)
     local lv = mem.u16(LEVEL)
-    publish("h_name", gameName(FIRST_NAME))
+    local name = gameName(FIRST_NAME)
+    publish("h_name", name)
+    publish("h_name_s", fitScale(name, 104, 380))
     publish("h_lv", lv)
+    publish("h_next", lv < 99 and math.max(0, mem.u32(LEVEL_EXP + 4 * (lv + 1)) - mem.u32(HERO_EXP)) or 0)
     local base = BASE_HP_SP + 4 * (11 * lv + 1)
     local hp, sp, maxHp, maxSp = mem.u16(HP), mem.u16(SP), mem.u16(base), mem.u16(base + 2)
     publish("h_hp", hp)
@@ -252,20 +301,30 @@ function M.update(publish, f)
     publish("h_maxsp", maxSp)
     publish("h_hpf", maxHp > 0 and math.min(1, hp / maxHp) or 0)
     publish("h_spf", maxSp > 0 and math.min(1, sp / maxSp) or 0)
-    publish("h_mood", MOODS[mem.u16(CONDITION)] or "Good")
+    local cond = mem.u16(CONDITION)
+    if not MOODS[cond] then cond = 0 end
+    publish("h_mood", MOODS[cond])
+    publish("h_cond", cond)
     publish("h_funds", commas(mem.u32(FUNDS)))
     for k = 1, 3 do
         local pts = mem.u16(STATS + 2 * (k - 1))
         local r = rankOf(k, pts)
         publish("st_r" .. (k - 1), r)
         publish("st_w" .. (k - 1), RANKS[k][r])
+        publish("st_s" .. (k - 1), fitScale(RANKS[k][r], 104, 320))
     end
     local slot = mem.u16(EQUIPPED)
     local p = STOCK + PERSONA * math.min(slot, 11)
     local id = mem.u16(p + 2)
     if id > 0 and id < 256 then
-        publish("p_name", cstring(PERSONA_NAMES + 17 * id, 17))
-        publish("p_lv", mem.u16(p + 4))
+        local pname = cstring(PERSONA_NAMES + 17 * id, 17)
+        local plv = mem.u16(p + 4)
+        publish("p_id", id)
+        publish("p_name", pname)
+        publish("p_name_s", fitScale(pname, 104, 266))
+        publish("p_lv", plv)
+        local need = (id < 0xC0 or id > 0xDF) and plv < 99 and personaExp(id, plv + 1)
+        publish("p_next", need and math.max(0, need - mem.u32(p + 8)) or 0)
         publish("p_arc", ARCANA[mem.u8(PERSONA_ARCANA + 14 * id)] or "")
     end
     if frame < nextSlow then return end

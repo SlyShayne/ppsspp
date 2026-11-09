@@ -282,6 +282,7 @@ local homeSince = nil
 local WIN_LIST     = 0x08C3E73C
 local WIN_ASKING   = 0x800
 local CHOICE_MAX   = 8
+local GLYPH_SPACE  = 0x83F6  -- a space's glyph code (the rest are ASCII)
 -- Frames the box takes to open (eased, a quarter sine) and to close (straight), as the game's: 6 and 5 of
 -- its 30 Hz frames.
 local CHOICE_OPEN  = 12
@@ -343,7 +344,11 @@ local function options(w)
         for _ = 1, math.min(mem.u32(run + 0x18), 64) do
             if not ram(glyph) then break end
             local c = mem.u16(glyph)
-            if c >= 0x20 and c < 0x7F then line.text = line.text .. string.char(c) end
+            if c == GLYPH_SPACE then
+                line.text = line.text .. " "
+            elseif c >= 0x20 and c < 0x7F then
+                line.text = line.text .. string.char(c)
+            end
             line.colour = line.colour or (mem.u32(glyph + 0x10) >> 8)
             glyph = mem.u32(glyph + 0x28)
         end
@@ -381,10 +386,9 @@ local function choice()
         local line = lines[i + 1]
         publish("ch_t" .. i, line and (line.text:gsub("%s+$", "")) or "")
         -- Each colour is a font of its own (see gungnir/tools/p3p_font.py): white under the cursor, otherwise
-        -- the colour the game gave the option, his blue or her pink.
-        local colour = line and line.colour and line.colour & 0xFFFFFF
+        -- the protagonist's, his blue or her pink.
         local font = "white"
-        if i ~= cursor then font = (colour == 0xEC447F or (colour == nil and female)) and "her" or "him" end
+        if i ~= cursor then font = female and "her" or "him" end
         publish("ch_f" .. i, font)
     end
 end

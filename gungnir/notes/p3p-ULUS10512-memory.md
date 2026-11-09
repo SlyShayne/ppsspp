@@ -112,7 +112,7 @@ ones). Static data, the same in every scene.
 | window + 0x0 | State. Bits 0–2: 3 or more while its text draws. Bits 3–5: the options' text, 0x18 appearing, 0x20 shown. Bits 10–11: 0x800 while it's asking a question (set once when the choice opens; the choice's input runs on it, so clearing it freezes the cursor) |
 | window + 0x4 | The scene's message file (`MSG1`, Atlus BMD: a table of type/pointer pairs, type 1 a choice such as `msg_YN`) |
 | window + 0x1C | The message being shown |
-| window + 0x20, + 0x40 | The conversation text's and the options' layout: runs of glyphs. A run's +0x8 is its line's y (options sort by it), +0x18 its glyph count, +0x1C its first glyph, +0x24 the next run. A glyph's +0x0 (u16) is its letter (ASCII; `0x83F6` trails), +0x10 its colour as RRGGBBAA, +0x28 the next glyph |
+| window + 0x20, + 0x40 | The conversation text's and the options' layout: runs of glyphs. A run's +0x8 is its line's y (options sort by it), +0x18 its glyph count, +0x1C its first glyph, +0x24 the next run. A glyph's +0x0 (u16) is its letter (ASCII, and `0x83F6` a space), +0x10 its colour as RRGGBBAA, +0x28 the next glyph |
 | window + 0x48 (u16) | How many options |
 | window + 0x4A, + 0x4C (u16) | The cursor. Writing both moves it; the highlight follows |
 | `0x08E68298` | Game flags: flag n is bit n & 31 of the word at + (n >> 5) * 4 (`0x0880C150`). Flag `0x1007` (bit 7 of `0x08E68498`) is the female protagonist |
@@ -206,6 +206,19 @@ Found from the town save (4/22 after school) with the menus open, starting from 
 | `0x08E64820` | The date: days since 1 April 2009 (u16; `0x08E64818` holds the same). `0x08E6481A` the time of day (byte, 4 After School). 1 April 2009 was a Wednesday |
 | `0x08BF9D0C + max(0, day - 4)` | The moon's age, 0..29: 14 full (the HUD's "Next" counts days to the next 14), 7 and 22 half, 29 new as the calendar draws them |
 | `0x08BF9BEC` | Holidays: (month, day) s16 pairs ending with -1. Sundays and these are red (`0x08819C58`) |
+
+EXP: the protagonist reaches level L at the u32 at `0x08BBA248 + 4 * L` (`0x0880E1CC`); NEXT EXP is that for
+level + 1 less the EXP at +0x44. A Persona (but the party's, ids 0xC0..0xDF) reaches level L at
+L^3 * c0 * (growth * c1 + c2) + c3 in single floats, truncated (`0x08810750`): c0..c3 are the floats at `0x08BA99A0`
+(1.4, -0.019, 3.1, 10), growth the byte at +3 of its entry in `[0x08C40CDC]` (`0x08C5B9C0`, 14 bytes an id; +1 is
+the arcana).
+
+A link's person is the byte at +40 of its entry: a character number, whose picture is
+`data/commu/bustup/i_bust%02X_%c.tmx` with the u16 at `0x08BE16E0 + 2 * character` for him, `0x08BE1724` for her
+(`0x08933330`; flag 0x1007 picks). The cards are `data/commu/card/c_card%02x.tmx` by arcana - 1. The menus' atlas
+(texture dump `09367a10d5c9ffce74e8c8c4`) holds the moods' faces (Great, Tired, Good, Sick at (1, 129), (21, 129),
+(41, 129), (61, 129), 19x18) drawn over the disc at (1, 148, 22x21) tinted `#4D6B89`; the faces are tinted
+`#F3FFA3` (Great), `#99F3FF` (Good, Tired) and `#FFA3CF` (Sick). The space glyph in a message is `0x83F6`.
 
 Social stat ranks (`0x0880D184`): the first rank whose cumulative steps the points haven't reached, else 6. The
 steps (from loaded data, `[0x08D40ECC] + 8`): Academics 20, 35, 45, 55, 75; Charm 15, 15, 15, 25, 30; Courage 15, 15,
