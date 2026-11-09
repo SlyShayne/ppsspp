@@ -35,7 +35,7 @@ HEADSHOT = 128   # px, the Persona panel's picture
 CARD = (176, 220)   # px, the link details' card and person
 CARD_SMALL = (56, 72)
 KANJI_SCALE = 3  # the kanji beside the social stats, a little smaller than the screen's 4x
-PORTRAIT_SCALE = 2.5  # the protagonist beside a choice they make
+PORTRAIT_SCALE = 4  # the protagonist beside a choice they make, the screen's 4x
 PORTRAIT_BLINK_Y = 36
 # The menus' atlas (texture dump names less the address): the moods' disc and faces, the stats' kanji. Each piece
 # is (u0, v0, u1, v1), placed at (x, y) in PSP pixels as the game draws it, in its colour (RGB, alpha).
@@ -219,7 +219,18 @@ def archive_art(dst, cpk):
             shut = cleaned(tmx(d[at[1]:]))
             size = round(256 * PORTRAIT_SCALE)
             smooth(base, (size, size)).save(os.path.join(dst, "port_%d_%s.png" % (c, outfit)))
-            smooth(shut, (size, round(64 * PORTRAIT_SCALE))).save(os.path.join(dst, "port_%d_%s_b.png" % (c, outfit)))
+            strip = smooth(shut, (size, round(64 * PORTRAIT_SCALE)))
+            # Feathered at its top and bottom, so its edges don't show as lines across the hair.
+            a = strip.getchannel("A")
+            edge = round(4 * PORTRAIT_SCALE)
+            fade = Image.new("L", strip.size, 255)
+            for y in range(edge):
+                v = round(255 * y / edge)
+                fade.paste(v, (0, y, strip.width, y + 1))
+                fade.paste(v, (0, strip.height - 1 - y, strip.width, strip.height - y))
+            from PIL import ImageChops
+            strip.putalpha(ImageChops.multiply(a, fade))
+            strip.save(os.path.join(dst, "port_%d_%s_b.png" % (c, outfit)))
             ports += 1
     print("wrote %d Persona headshots, %d cards, %d people and %d protagonist portraits" % (n, cards, busts, ports))
 

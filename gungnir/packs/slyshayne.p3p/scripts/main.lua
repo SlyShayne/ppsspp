@@ -324,7 +324,9 @@ local OUTFITS = { ["1_1"] = true, ["1_2"] = true, ["1_3"] = true, ["1_4"] = true
     ["21_0"] = true, ["61_0"] = true, ["81_0"] = true }
 local choicePortrait = false
 local portraitGone = nil
-local PORTRAIT_IN, PORTRAIT_OUT = 18, 16  -- frames to slide in (easing out) and out (easing in)
+-- Frames to slide and fade in, and out; both ease out (quick, then settling).
+local PORTRAIT_IN, PORTRAIT_OUT = 40, 32
+local function easeOut(t) return 1 - (1 - t) ^ 3 end
 -- Blinking: every 2.5 to 6 s (now and then twice), the eyes half shut, shut, half shut, open: frames from its
 -- start for each step.
 local BLINK = { 3, 7, 10 }
@@ -422,7 +424,7 @@ local function choice()
         publish("ch_open", left)
         publish("ch_text", 0)
         publish("ch_port", choicePortrait and 1 or 0)
-        publish("ch_pt", 1 - out * out)
+        publish("ch_pt", 1 - easeOut(out))
         if choicePortrait then blink() end
         return
     end
@@ -441,7 +443,7 @@ local function choice()
     choiceN = n
     portraitGone = nil
     local pin = ramp(frame - choiceSince, { 0, PORTRAIT_IN })
-    publish("ch_pt", 1 - (1 - pin) * (1 - pin))
+    publish("ch_pt", easeOut(pin))
     publish("ch_port", choicePortrait and 1 or 0)
     if choicePortrait then blink() end
     local open = ramp(frame - choiceSince, { 0, CHOICE_OPEN })

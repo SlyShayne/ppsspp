@@ -460,10 +460,11 @@
         // A choice the protagonist makes: they slide and fade in from the right behind the box as it opens, and
         // back out as it closes, in the outfit they're wearing (assets/game/port_*, gungnir/tools/p3p_home.py),
         // blinking now and then (the top of their face with the eyes shut, laid over it).
-        { "type": "group", "rect": ["640 + 300 * (1 - ch_pt)", "380 - 3 * (60 + 84 * ch_n) / 4", 640, 640],
+        // At the game's 4x, standing on the bottom of the screen with their head above the box, partly off the right.
+        { "type": "group", "rect": ["480 + 320 * (1 - ch_pt)", 56, 1024, 1024],
           "visible": "ch_port && ch_pt > 0", "opacity": "ch_pt", "children": [
-          { "type": "image", "rect": [0, 0, 640, 640], "src": "assets/game/port_{ch_who}.png" },
-          { "type": "image", "rect": [0, 90, 640, 160], "src": "assets/game/port_{ch_who}_b.png", "opacity": "ch_blink", "visible": "ch_blink > 0" },
+          { "type": "image", "rect": [0, 0, 1024, 1024], "src": "assets/game/port_{ch_who}.png" },
+          { "type": "image", "rect": [0, 144, 1024, 256], "src": "assets/game/port_{ch_who}_b.png", "opacity": "ch_blink", "visible": "ch_blink > 0" },
         ] },
         { "type": "group", "rect": [76, "810 - 3 * (60 + 84 * ch_n) / 4", 1088, "60 + 84 * ch_n"], "visible": "ch_open > 0",
           "scale_y": "ch_open", "origin": [0.5, 1], "children": [
